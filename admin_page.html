@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TechFlow Admin | لوحة التحكم الاستراتيجية</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #1e293b; --secondary: #334155; --accent: #fbbf24;
+            --bg: #f8fafc; --white: #ffffff; --text: #1e293b; --danger: #ef4444; --success: #10b981;
+        }
+        * { box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); margin: 0; display: flex; color: var(--text); }
+
+        /* Sidebar */
+        .sidebar { width: 260px; background: var(--primary); color: white; height: 100vh; position: fixed; padding: 20px; transition: 0.3s; z-index: 100; }
+        .sidebar h2 { color: var(--accent); border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 15px; text-align: center; }
+        .nav-link { padding: 12px 15px; cursor: pointer; border-radius: 10px; transition: 0.3s; margin-top: 8px; display: flex; align-items: center; gap: 10px; }
+        .nav-link:hover { background: rgba(255,255,255,0.1); color: var(--accent); }
+
+        /* Main Content */
+        .main { margin-right: 260px; width: calc(100% - 260px); padding: 30px; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; background: var(--white); padding: 15px 25px; border-radius: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        
+        /* Bell & Notif */
+        .bell-container { position: relative; cursor: pointer; padding: 10px; background: #f1f5f9; border-radius: 10px; }
+        #adminNotifBadge { position: absolute; top: -5px; right: -5px; background: var(--danger); color: white; border-radius: 50%; padding: 2px 6px; font-size: 0.7rem; font-weight: bold; }
+
+        /* Stats Cards */
+        .stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .stat-card { background: var(--white); padding: 20px; border-radius: 15px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); display: flex; align-items: center; gap: 15px; border-right: 5px solid var(--accent); }
+        .stat-card i { font-size: 2rem; color: var(--primary); }
+        .stat-card h4 { margin: 0; color: #64748b; font-size: 0.9rem; }
+        .stat-card span { font-size: 1.5rem; font-weight: 800; }
+
+        .card { background: var(--white); padding: 25px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 25px; }
+        h3 { margin-top: 0; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #f1f5f9; padding-bottom: 10px; }
+
+        input, select, button, textarea { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0; margin-top: 10px; font-family: inherit; }
+        button { background: var(--primary); color: white; border: none; cursor: pointer; font-weight: bold; transition: 0.3s; }
+        button:hover { background: var(--accent); color: var(--primary); transform: translateY(-2px); }
+        
+        .grid-2 { display: grid; grid-template-columns: 1.5fr 1fr; gap: 25px; }
+        
+        /* Tables */
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th { background: #f8fafc; color: #64748b; font-weight: 600; padding: 15px; text-align: right; }
+        td { padding: 15px; text-align: right; border-bottom: 1px solid #f1f5f9; font-size: 0.9rem; }
+        .status-tag { padding: 5px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: bold; }
+        .online { background: #dcfce7; color: #166534; }
+        .offline { background: #fee2e2; color: #991b1b; }
+        
+        .delete-btn { color: var(--danger); cursor: pointer; border: none; background: none; width: auto; padding: 5px; }
+        
+        /* Activity UI */
+        .activity-item { padding: 10px; border-bottom: 1px solid #f1f5f9; font-size: 0.85rem; display: flex; gap: 10px; align-items: center; }
+
+        @media (max-width: 1024px) { .grid-2 { grid-template-columns: 1fr; } .main { margin-right: 0; width: 100%; } .sidebar { display: none; } }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <h2>TechFlow Admin</h2>
+        <div class="nav-link"><i class="fas fa-chart-line"></i> الإحصائيات العامة</div>
+        <div class="nav-link"><i class="fas fa-video"></i> إدارة المحتوى</div>
+        <div class="nav-link"><i class="fas fa-users"></i> إدارة الطلاب</div>
+        <div class="nav-link" id="logoutBtn" style="margin-top: 50px; color: var(--accent);"><i class="fas fa-door-open"></i> تسجيل الخروج</div>
+    </div>
+
+    <div class="main">
+        <div class="header">
+            <div>
+                <h1>لوحة التحكم الإدارية ✨</h1>
+                <p>مرحباً يا <b>هدولتي</b>، إليكِ تقرير أداء الأكاديمية اليوم.</p>
+            </div>
+            <div class="bell-container">
+                <i class="fas fa-bell" style="font-size: 1.5rem; color: var(--primary);"></i>
+                <span id="adminNotifBadge" style="display: none;">0</span>
+            </div>
+        </div>
+
+        <div class="stats-row">
+            <div class="stat-card">
+                <i class="fas fa-user-graduate"></i>
+                <div><h4>إجمالي الطلاب</h4><span id="totalStudents">0</span></div>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-book-open"></i>
+                <div><h4>الدروس المنشورة</h4><span id="totalLessons">0</span></div>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-tasks"></i>
+                <div><h4>الاختبارات</h4><span id="totalQuizzes">0</span></div>
+            </div>
+        </div>
+
+        <div class="card" style="border-top: 4px solid var(--accent);">
+            <h3><i class="fas fa-bullhorn"></i> إرسال تنبيه عاجل لجميع الطالبات</h3>
+            <div style="display: flex; gap: 15px;">
+                <input type="text" id="announcementText" placeholder="اكتبي رسالة تظهر فوراً في لوحة الطالبة...">
+                <button id="sendAnnouncementBtn" style="width: 200px; background: var(--accent); color: var(--primary);">نشر الإعلان</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3><i class="fas fa-plus-circle"></i> إضافة محتوى أو سؤال</h3>
+            <div class="grid-2">
+                <div style="border-left: 1px solid #f1f5f9; padding-left: 20px;">
+                    <p><b>🎬 رفع فيديو جديد:</b></p>
+                    <input type="text" id="videoTitle" placeholder="عنوان الدرس">
+                    <select id="videoCategory">
+                        <option value="cyber">🛡️ الأمن السيبراني</option>
+                        <option value="cloud">☁️ الحوسبة السحابية</option>
+                        <option value="programming">💻 لغات البرمجة</option>
+                    </select>
+                    <input type="text" id="videoUrl" placeholder="رابط (YouTube / Drive)">
+                    <button id="uploadContentBtn">نشر الدرس الآن</button>
+                </div>
+                <div>
+                    <div>
+    <p><b>📝 إضافة سؤال لاختبار (مصنف بالفصول):</b></p>
+    
+    <select id="quizCategory">
+        <option value="cyber">🛡️ الأمن السيبراني</option>
+        <option value="cloud">☁️ الحوسبة السحابية</option>
+        <option value="programming">💻 لغات البرمجة</option>
+    </select>
+
+    <input type="text" id="chapterName" placeholder="اسم الفصل (مثال: الفصل الأول: التشفير)">
+
+    <input type="text" id="questionText" placeholder="اكتبي نص السؤال هنا...">
+
+    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+        <input type="text" id="opt0" placeholder="خيار 1 (الرقم 0)">
+        <input type="text" id="opt1" placeholder="خيار 2 (الرقم 1)">
+        <input type="text" id="opt2" placeholder="خيار 3 (الرقم 2)">
+        <input type="text" id="opt3" placeholder="خيار 4 (الرقم 3)">
+    </div>
+
+    <label style="font-size: 0.8rem; color: #64748b; margin-top: 5px; display: block;">رقم الإجابة الصحيحة:</label>
+    <select id="correctIdx">
+        <option value="0">الخيار الأول (0)</option>
+        <option value="1">الخيار الثاني (1)</option>
+        <option value="2">الخيار الثالث (2)</option>
+        <option value="3">الخيار الرابع (3)</option>
+    </select>
+
+    <button id="saveQuestionBtn" style="background: var(--secondary);">حفظ السؤال في الفصل ✨</button>
+</div>
+        </div>
+
+        <div class="grid-2">
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <h3><i class="fas fa-users-cog"></i> مراقبة الطلاب</h3>
+                    <input type="text" id="searchStudent" placeholder="🔍 بحث عن طالبة..." style="width: 200px; margin: 0; padding: 8px;">
+                </div>
+                <div style="overflow-x: auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>الطالب</th>
+                                <th>البريد</th>
+                                <th>الحالة</th>
+                                <th>آخر ظهور</th>
+                            </tr>
+                        </thead>
+                        <tbody id="studentData"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3><i class="fas fa-bolt"></i> آخر النشاطات</h3>
+                <div id="activityLog" style="max-height: 300px; overflow-y: auto;">
+                    <p style="color: #94a3b8; text-align: center;">جاري المراقبة...</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid-2">
+            <div class="card">
+                <h3><i class="fas fa-list-ul"></i> التحكم بالدروس</h3>
+                <div id="lessonsList" style="max-height: 400px; overflow-y: auto;"></div>
+            </div>
+
+            <div class="card">
+                <h3><i class="fas fa-comments"></i> إدارة التعليقات والتقييمات</h3>
+                <div style="overflow-x: auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>الطالبة</th>
+                                <th>التعليق</th>
+                                <th>الحالة</th>
+                                <th>إجراء</th>
+                            </tr>
+                        </thead>
+                        <tbody id="commentsData"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, doc, deleteDoc, updateDoc, where, limit, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { getAuth, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyCB76yITZG4XNa6AXNPkIR8PxLZuMv1j3Y",
+        authDomain: "techflowacademy-3e89c.firebaseapp.com",
+        projectId: "techflowacademy-3e89c",
+        appId: "1:373744584399:web:a57f9fb4f6129cd5e059ba"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+
+    // --- 1. إدارة بيانات الطلاب ومراقبة الحالة ---
+    let allStudents = [];
+
+    function renderStudents(students) {
+        const tbody = document.getElementById('studentData');
+        const searchTerm = document.getElementById('searchStudent').value.toLowerCase();
+        tbody.innerHTML = "";
+
+        students.forEach((data) => {
+            // فلترة البحث
+            if (searchTerm && !data.first_name?.toLowerCase().includes(searchTerm) && !data.email?.toLowerCase().includes(searchTerm)) {
+                return;
+            }
+
+            let isOnline = false;
+            let timeString = "لم تدخل بعد";
+
+            if (data.lastSeen) {
+                const lastSeenDate = data.lastSeen.toDate();
+                const now = new Date();
+                const diffInSeconds = Math.floor((now - lastSeenDate) / 1000);
+                
+                // إذا كان آخر نشاط خلال آخر دقيقة نعتبرها متصلة
+                if (diffInSeconds < 60) isOnline = true;
+                timeString = lastSeenDate.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
+            }
+
+            tbody.innerHTML += `
+                <tr>
+                    <td>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <div style="width: 10px; height: 10px; border-radius: 50%; background: ${isOnline ? 'var(--success)' : '#cbd5e1'}; box-shadow: ${isOnline ? '0 0 8px var(--success)' : 'none'}"></div>
+                            <b>${data.first_name || 'طالبة جديدة'}</b>
+                        </div>
+                    </td>
+                    <td style="color: #64748b; font-size: 0.8rem;">${data.email}</td>
+                    <td>
+                        <span class="status-tag ${isOnline ? 'online' : 'offline'}">
+                            ${isOnline ? '● متصلة الآن' : 'غير متصلة'}
+                        </span>
+                    </td>
+                    <td style="font-size: 0.75rem; color: #64748b;">
+                        ${isOnline ? '<span style="color:var(--success)">نشطة حالياً</span>' : 'آخر ظهور: ' + timeString}
+                    </td>
+                </tr>`;
+        });
+    }
+
+    // الاستماع الفوري لقاعدة بيانات الطلاب
+    onSnapshot(collection(db, "students"), (snapshot) => {
+        allStudents = [];
+        snapshot.forEach(doc => allStudents.push({ id: doc.id, ...doc.data() }));
+        renderStudents(allStudents);
+        document.getElementById('totalStudents').innerText = snapshot.size;
+    });
+
+    // تحديث الحالة بصرياً كل 30 ثانية (لتحويل المتصل إلى أوفلاين تلقائياً)
+    setInterval(() => renderStudents(allStudents), 30000);
+
+    // ربط البحث
+    document.getElementById('searchStudent').oninput = () => renderStudents(allStudents);
+// --- داخل جزء "إضافة سؤال لاختبار" في لوحة الإدارة ---
+
+/* تعديل حقول الإدخال في HTML لوحة الإدارة لتشمل:
+1. اختيار المسار (Category)
+2. اسم الفصل (Chapter Name)
+3. نص السؤال
+4. الخيارات
+*/
+// ربط زر الحفظ بالوظيفة (أضيفي هذا السطر مع باقي أزرار الـ onclick)
+// الربط الصحيح لزر الحفظ في لوحة الإدارة
+document.getElementById('saveQuestionBtn').onclick = async () => {
+    const category = document.getElementById('quizCategory').value;
+    const chapter = document.getElementById('chapterName').value;
+    const question = document.getElementById('questionText').value;
+    
+    // تجميع الخيارات
+    const options = [
+        document.getElementById('opt0').value,
+        document.getElementById('opt1').value,
+        document.getElementById('opt2').value,
+        document.getElementById('opt3').value
+    ];
+    
+    const correct = document.getElementById('correctIdx').value;
+
+    // التحقق من البيانات
+    if(!chapter || !question || options.some(opt => opt === "")) {
+        alert("هدولتي، تأكدي من تعبئة كل الخيارات وكتابة اسم الفصل 🌸");
+        return;
+    }
+
+    try {
+        // الطريقة الصحيحة للإصدار الحديث (v9/v10)
+        await addDoc(collection(db, "quizzes"), {
+            category: category,
+            chapter: chapter,
+            question: question,
+            options: options,
+            correct: parseInt(correct),
+            createdAt: serverTimestamp() // نستخدم المستدعى من المكتبة
+        });
+
+        alert(`تمت إضافة السؤال بنجاح في ${chapter} 🚀`);
+        
+        // مسح الحقول
+        document.getElementById('questionText').value = "";
+        document.getElementById('opt0').value = "";
+        document.getElementById('opt1').value = "";
+        document.getElementById('opt2').value = "";
+        document.getElementById('opt3').value = "";
+    } catch (error) {
+        console.error("Error adding quiz: ", error);
+        alert("حدث خطأ أثناء الحفظ! تأكدي من الصلاحيات");
+    }
+};
+    // --- 2. إدارة الدروس ---
+    onSnapshot(query(collection(db, "lessons"), orderBy("createdAt", "desc")), (snapshot) => {
+        const list = document.getElementById('lessonsList');
+        list.innerHTML = "";
+        document.getElementById('totalLessons').innerText = snapshot.size;
+        snapshot.forEach((lessonDoc) => {
+            const lesson = lessonDoc.data();
+            const div = document.createElement('div');
+            div.style.cssText = "display:flex; justify-content:space-between; align-items:center; padding:10px; border-bottom:1px solid #f1f5f9;";
+            div.innerHTML = `<div><span style="color:var(--accent);">[${lesson.category}]</span> <b>${lesson.title}</b></div>
+                <button onclick="deleteLesson('${lessonDoc.id}')" class="delete-btn"><i class="fas fa-trash-alt"></i></button>`;
+            list.appendChild(div);
+        });
+    });
+
+    window.deleteLesson = async (id) => {
+        if (confirm("هدولتي، متأكدة من الحذف؟")) await deleteDoc(doc(db, "lessons", id));
+    };
+
+    // --- 3. إدارة التعليقات والإشعارات ---
+    let lastPendingCount = 0;
+    onSnapshot(query(collection(db, "comments"), orderBy("createdAt", "desc")), (snapshot) => {
+        const tbody = document.getElementById('commentsData');
+        tbody.innerHTML = "";
+        let pending = 0;
+        snapshot.forEach(cDoc => {
+            const c = cDoc.data();
+            if(c.status === 'pending') pending++;
+            tbody.innerHTML += `
+                <tr>
+                    <td>${c.studentName}</td>
+                    <td style="font-size:0.75rem;">${c.comment}</td>
+                    <td><span class="status-tag ${c.status === 'approved' ? 'online' : 'offline'}">${c.status === 'approved' ? 'معتمد' : 'معلق'}</span></td>
+                    <td>
+                        ${c.status === 'pending' ? `<button onclick="approveComment('${cDoc.id}')" style="padding:4px; font-size:0.7rem; background:var(--success);">اعتماد</button>` : ''}
+                        <button onclick="deleteComment('${cDoc.id}')" class="delete-btn"><i class="fas fa-trash-alt"></i></button>
+                    </td>
+                </tr>`;
+        });
+        
+        const badge = document.getElementById('adminNotifBadge');
+        if (pending > 0) {
+            badge.innerText = pending; badge.style.display = 'block';
+            if (pending > lastPendingCount) new Audio('https://assets.mixkit.co/active_storage/sfx/2358/2358-preview.mp3').play().catch(() => {});
+        } else { badge.style.display = 'none'; }
+        lastPendingCount = pending;
+    });
+
+    window.approveComment = async (id) => await updateDoc(doc(db, "comments", id), { status: "approved" });
+    window.deleteComment = async (id) => { if(confirm("حذف؟")) await deleteDoc(doc(db, "comments", id)); };
+
+    // --- 4. العمليات (نشر دروس، إعلانات، خروج) ---
+    document.getElementById('sendAnnouncementBtn').onclick = async () => {
+        const msg = document.getElementById('announcementText').value;
+        if(msg) {
+            await addDoc(collection(db, "announcements"), { message: msg, createdAt: serverTimestamp() });
+            alert("تم إرسال التنبيه يا هدولتي! 🚀");
+            document.getElementById('announcementText').value = "";
+        }
+    };
+
+    document.getElementById('uploadContentBtn').onclick = async () => {
+        const title = document.getElementById('videoTitle').value;
+        const category = document.getElementById('videoCategory').value;
+        const url = document.getElementById('videoUrl').value;
+        if (title && url) {
+            await addDoc(collection(db, "lessons"), { title, category, url, createdAt: serverTimestamp() });
+            alert("تم النشر!");
+            document.getElementById('videoTitle').value = ""; document.getElementById('videoUrl').value = "";
+        }
+    };
+
+    onSnapshot(collection(db, "quizzes"), snap => document.getElementById('totalQuizzes').innerText = snap.size);
+    document.getElementById('logoutBtn').onclick = () => signOut(auth).then(() => window.location.href = "login.html");
+
+</script>
+</body>
+</html>

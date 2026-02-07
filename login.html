@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تسجيل دخول | TechFlow Academy</title>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #1a2a6c;
+            --secondary-color: #b21f1f;
+            --accent-color: #fdbb2d;
+            --glass-bg: rgba(255, 255, 255, 0.9);
+        }
+
+        body {
+            font-family: 'Tajawal', sans-serif;
+            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            color: #333;
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .login-container {
+            background: var(--glass-bg);
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.3);
+        }
+
+        .logo-area h1 {
+            color: var(--primary-color);
+            margin-bottom: 5px;
+            font-size: 24px;
+        }
+
+        .logo-area p {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 30px;
+        }
+
+        .input-group {
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #eee;
+            border-radius: 10px;
+            outline: none;
+            transition: 0.3s;
+            box-sizing: border-box;
+            font-family: 'Tajawal', sans-serif;
+            font-size: 16px;
+        }
+
+        input:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 8px rgba(26, 42, 108, 0.1);
+        }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 16px;
+            transition: 0.3s;
+            font-family: 'Tajawal', sans-serif;
+        }
+
+        button:hover {
+            background: #121d4d;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        button:active { transform: translateY(0); }
+
+        .error-msg {
+            background: #ffebee;
+            color: #c62828;
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 13px;
+            margin-top: 15px;
+            display: none;
+            border: 1px solid #ffcdd2;
+        }
+
+        /* تحسين مظهر "جاري التحميل" */
+        .loading-spinner {
+            display: none;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+<div class="login-container">
+    <div class="logo-area">
+        <h1>TechFlow Academy</h1>
+        <p>مرحباً بك في بوابتك للمستقبل التقني</p>
+    </div>
+
+    <div class="input-group">
+        <input type="email" id="userEmail" placeholder="البريد الإلكتروني" required>
+    </div>
+    
+    <div class="input-group">
+        <input type="password" id="userPass" placeholder="كلمة المرور" required>
+    </div>
+
+    <button id="loginBtn">
+        <span id="btnText">دخول للمنصة</span>
+        <div id="spinner" class="loading-spinner"></div>
+    </button>
+
+    <p id="errorField" class="error-msg"></p>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+
+<script>
+    const firebaseConfig = {
+        apiKey: "AIzaSyCB76yITZG4XNa6AXNPkIR8PxLZuMv1j3Y",
+        authDomain: "techflowacademy-3e89c.firebaseapp.com",
+        projectId: "techflowacademy-3e89c",
+        appId: "1:373744584399:web:a57f9fb4f6129cd5e059ba"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
+    const loginBtn = document.getElementById('loginBtn');
+    const btnText = document.getElementById('btnText');
+    const spinner = document.getElementById('spinner');
+
+    loginBtn.addEventListener('click', async () => {
+        const emailInput = document.getElementById('userEmail').value;
+        const passInput = document.getElementById('userPass').value;
+        const errorField = document.getElementById('errorField');
+
+        if(!emailInput || !passInput) return;
+
+        // بدء حالة التحميل
+        errorField.style.display = "none";
+        btnText.style.display = "none";
+        spinner.style.display = "block";
+        loginBtn.disabled = true;
+
+        // 1. دخول هدولتي (الأدمن)
+        if (emailInput === "hadeelkab@gmail.com" && passInput === "hadeel@") {
+            window.location.replace("admin_page.html");
+            return; 
+        }
+
+        try {
+            const snapshot = await db.collection("students").where("email", "==", emailInput).get();
+
+            if (!snapshot.empty) {
+                let userFound = false;
+                snapshot.forEach((doc) => {
+                    if (doc.data().pass === passInput) {
+                        userFound = true;
+                        auth.signInWithEmailAndPassword(emailInput, passInput).then(() => {
+                            window.location.replace("student_page.html");
+                        });
+                    }
+                });
+
+                if (!userFound) {
+                    showError("كلمة المرور غير صحيحة!");
+                }
+            } else {
+                showError("هذا الحساب غير مسجل لدينا!");
+            }
+        } catch (error) {
+            console.error(error);
+            showError("حدث خطأ في الاتصال، حاول مجدداً.");
+        } finally {
+            // إنهاء حالة التحميل إذا لم يتم الانتقال
+            if (window.location.pathname.includes("login.html")) {
+                btnText.style.display = "block";
+                spinner.style.display = "none";
+                loginBtn.disabled = false;
+            }
+        }
+    });
+
+    function showError(msg) {
+        const errorField = document.getElementById('errorField');
+        errorField.innerText = msg;
+        errorField.style.display = "block";
+        btnText.style.display = "block";
+        spinner.style.display = "none";
+        loginBtn.disabled = false;
+    }
+</script>
+</body>
+</html>

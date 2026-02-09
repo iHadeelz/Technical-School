@@ -83,7 +83,7 @@
     from { opacity: 0; transform: translateX(-100px); }
     to { opacity: 1; transform: translateX(0); }
 }
-        :root {
+:root {
     --primary-dark: #0f172a; 
     --trust-blue: #1e293b; 
     --accent-gold: #fbbf24;
@@ -97,6 +97,54 @@
     :root {
         --sidebar-width: 0px; /* نخفي السايدبار في الجوال */
         --header-height: 60px;
+    }
+}
+.main-content {
+    margin-right: var(--sidebar-width); 
+    margin-top: var(--header-height);
+    width: calc(100% - var(--sidebar-width)); 
+    padding: 20px;
+    display: grid; 
+    grid-template-columns: 1.8fr 1.2fr; /* كمبيوتر: عمودين */
+    gap: 25px;
+    height: calc(100vh - var(--header-height)); 
+    box-sizing: border-box; 
+    overflow-y: auto;
+}
+
+/* الجوال: تحويل الشبكة لعمود واحد */
+@media (max-width: 1024px) {
+    .main-content {
+        grid-template-columns: 1fr; /* عمود واحد للجوال والايباد */
+        margin-right: 0;
+        width: 100%;
+    }
+}
+.main-sidebar {
+    /* الخصائص الحالية... */
+    transition: transform 0.3s ease;
+}
+
+@media (max-width: 768px) {
+    .main-sidebar {
+        position: fixed;
+        right: -280px; /* نطلعه برا الشاشة */
+        z-index: 2001;
+        background: var(--primary-dark);
+        width: 280px;
+    }
+    
+    /* إذا اضفتِ كلاس "active" بالجافاسكريبت يظهر */
+    .main-sidebar.active {
+        transform: translateX(-280px); /* يرجع يدخل الشاشة */
+    }
+}
+@media (max-width: 480px) {
+    header {
+        padding: 0 15px;
+    }
+    .user-profile-btn span {
+        display: none; /* نخفي اسم المستخدم ونبقي الافاتار فقط */
     }
 }
     </style>
@@ -687,5 +735,4 @@ function showTopBar(msg) {
     document.getElementById('logoutBtnModal').onclick = logoutAction;
 </script>
 </body>
-
 </html>

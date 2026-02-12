@@ -58,6 +58,48 @@
         .activity-item { padding: 10px; border-bottom: 1px solid #f1f5f9; font-size: 0.85rem; display: flex; gap: 10px; align-items: center; }
 
         @media (max-width: 1024px) { .grid-2 { grid-template-columns: 1fr; } .main { margin-right: 0; width: 100%; } .sidebar { display: none; } }
+        /* تصميم زر السويتش الصغير */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 34px;
+  height: 20px;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-color: #ccc;
+  transition: .4s;
+  border-radius: 20px;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 14px;
+  width: 14px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: .4s;
+  border-radius: 50%;
+}
+
+input:checked + .slider {
+  background-color: var(--accent); /* بيصير لونه ذهبي أو حسب لون أكاديميتك */
+}
+
+input:checked + .slider:before {
+  transform: translateX(14px);
+}
     </style>
 </head>
 <body>
@@ -115,6 +157,7 @@
                         <option value="cyber">🛡️ الأمن السيبراني</option>
                         <option value="cloud">☁️ الحوسبة السحابية</option>
                         <option value="programming">💻 لغات البرمجة</option>
+                        <option value="English"> اللغة الانجليزية </option>
                     </select>
                     <input type="text" id="videoUrl" placeholder="رابط (YouTube / Drive)">
                     <button id="uploadContentBtn">نشر الدرس الآن</button>
@@ -127,6 +170,7 @@
         <option value="cyber">🛡️ الأمن السيبراني</option>
         <option value="cloud">☁️ الحوسبة السحابية</option>
         <option value="programming">💻 لغات البرمجة</option>
+         <option value="English">💻 اللغة الأنجليزية </option>
     </select>
 
     <input type="text" id="chapterName" placeholder="اسم الفصل (مثال: الفصل الأول: التشفير)">
@@ -221,7 +265,7 @@
     const db = getFirestore(app);
     const auth = getAuth(app);
 
-    // --- 1. إدارة بيانات الطلاب ومراقبة الحالة ---
+    // --- 1. إدارة بيانات الطلاب ومراقبة الحالة وصلاحية الإنجليزي ---
     let allStudents = [];
 
     function renderStudents(students) {
@@ -230,7 +274,6 @@
         tbody.innerHTML = "";
 
         students.forEach((data) => {
-            // فلترة البحث
             if (searchTerm && !data.first_name?.toLowerCase().includes(searchTerm) && !data.email?.toLowerCase().includes(searchTerm)) {
                 return;
             }
@@ -242,12 +285,11 @@
                 const lastSeenDate = data.lastSeen.toDate();
                 const now = new Date();
                 const diffInSeconds = Math.floor((now - lastSeenDate) / 1000);
-                
-                // إذا كان آخر نشاط خلال آخر دقيقة نعتبرها متصلة
                 if (diffInSeconds < 60) isOnline = true;
                 timeString = lastSeenDate.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
             }
 
+            // تم إضافة حقل التحكم في قسم الإنجليزي هنا
             tbody.innerHTML += `
                 <tr>
                     <td>
@@ -256,20 +298,30 @@
                             <b>${data.first_name || 'طالبة جديدة'}</b>
                         </div>
                     </td>
-                    <td style="color: #64748b; font-size: 0.8rem;">${data.email}</td>
+                    <td>
+                        <div style="display: flex; flex-direction: column; gap: 4px;">
+                            <span style="font-size: 0.7rem; color: #64748b;">${data.email}</span>
+                            <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
+                                <input type="checkbox" ${data.canAccessEnglish ? 'checked' : ''} 
+                                       onchange="toggleEnglishAccess('${data.id}', this.checked)">
+                                <span style="font-size: 0.75rem; color: var(--accent);">فتح قسم الإنجليزي</span>
+                            </label>
+                        </div>
+                    </td>
                     <td>
                         <span class="status-tag ${isOnline ? 'online' : 'offline'}">
-                            ${isOnline ? '● متصلة الآن' : 'غير متصلة'}
+                            ${isOnline ? '● متصلة' : 'غير متصلة'}
                         </span>
                     </td>
                     <td style="font-size: 0.75rem; color: #64748b;">
-                        ${isOnline ? '<span style="color:var(--success)">نشطة حالياً</span>' : 'آخر ظهور: ' + timeString}
+                        ${isOnline ? '<span style="color:var(--success)">نشطة</span>' : timeString}
                     </td>
                 </tr>`;
         });
     }
 
-    // الاستماع الفوري لقاعدة بيانات الطلاب
+    
+
     onSnapshot(collection(db, "students"), (snapshot) => {
         allStudents = [];
         snapshot.forEach(doc => allStudents.push({ id: doc.id, ...doc.data() }));
@@ -277,67 +329,42 @@
         document.getElementById('totalStudents').innerText = snapshot.size;
     });
 
-    // تحديث الحالة بصرياً كل 30 ثانية (لتحويل المتصل إلى أوفلاين تلقائياً)
     setInterval(() => renderStudents(allStudents), 30000);
-
-    // ربط البحث
     document.getElementById('searchStudent').oninput = () => renderStudents(allStudents);
-// --- داخل جزء "إضافة سؤال لاختبار" في لوحة الإدارة ---
 
-/* تعديل حقول الإدخال في HTML لوحة الإدارة لتشمل:
-1. اختيار المسار (Category)
-2. اسم الفصل (Chapter Name)
-3. نص السؤال
-4. الخيارات
-*/
-// ربط زر الحفظ بالوظيفة (أضيفي هذا السطر مع باقي أزرار الـ onclick)
-// الربط الصحيح لزر الحفظ في لوحة الإدارة
-document.getElementById('saveQuestionBtn').onclick = async () => {
-    const category = document.getElementById('quizCategory').value;
-    const chapter = document.getElementById('chapterName').value;
-    const question = document.getElementById('questionText').value;
-    
-    // تجميع الخيارات
-    const options = [
-        document.getElementById('opt0').value,
-        document.getElementById('opt1').value,
-        document.getElementById('opt2').value,
-        document.getElementById('opt3').value
-    ];
-    
-    const correct = document.getElementById('correctIdx').value;
+    // --- 2. إدارة الاختبارات (Quizzes) ---
+    document.getElementById('saveQuestionBtn').onclick = async () => {
+        const category = document.getElementById('quizCategory').value;
+        const chapter = document.getElementById('chapterName').value;
+        const question = document.getElementById('questionText').value;
+        const options = [
+            document.getElementById('opt0').value,
+            document.getElementById('opt1').value,
+            document.getElementById('opt2').value,
+            document.getElementById('opt3').value
+        ];
+        const correct = document.getElementById('correctIdx').value;
 
-    // التحقق من البيانات
-    if(!chapter || !question || options.some(opt => opt === "")) {
-        alert("هدولتي، تأكدي من تعبئة كل الخيارات وكتابة اسم الفصل 🌸");
-        return;
-    }
+        if(!chapter || !question || options.some(opt => opt === "")) {
+            alert("هدولتي، تأكدي من تعبئة كل الخيارات وكتابة اسم الفصل 🌸");
+            return;
+        }
 
-    try {
-        // الطريقة الصحيحة للإصدار الحديث (v9/v10)
-        await addDoc(collection(db, "quizzes"), {
-            category: category,
-            chapter: chapter,
-            question: question,
-            options: options,
-            correct: parseInt(correct),
-            createdAt: serverTimestamp() // نستخدم المستدعى من المكتبة
-        });
+        try {
+            await addDoc(collection(db, "quizzes"), {
+                category, chapter, question, options,
+                correct: parseInt(correct),
+                createdAt: serverTimestamp()
+            });
+            alert(`تمت إضافة السؤال بنجاح في ${chapter} 🚀`);
+            document.getElementById('questionText').value = "";
+            for(let i=0; i<4; i++) document.getElementById(`opt${i}`).value = "";
+        } catch (error) {
+            alert("حدث خطأ أثناء الحفظ!");
+        }
+    };
 
-        alert(`تمت إضافة السؤال بنجاح في ${chapter} 🚀`);
-        
-        // مسح الحقول
-        document.getElementById('questionText').value = "";
-        document.getElementById('opt0').value = "";
-        document.getElementById('opt1').value = "";
-        document.getElementById('opt2').value = "";
-        document.getElementById('opt3').value = "";
-    } catch (error) {
-        console.error("Error adding quiz: ", error);
-        alert("حدث خطأ أثناء الحفظ! تأكدي من الصلاحيات");
-    }
-};
-    // --- 2. إدارة الدروس ---
+    // --- 3. إدارة الدروس (Lessons) ---
     onSnapshot(query(collection(db, "lessons"), orderBy("createdAt", "desc")), (snapshot) => {
         const list = document.getElementById('lessonsList');
         list.innerHTML = "";
@@ -346,7 +373,11 @@ document.getElementById('saveQuestionBtn').onclick = async () => {
             const lesson = lessonDoc.data();
             const div = document.createElement('div');
             div.style.cssText = "display:flex; justify-content:space-between; align-items:center; padding:10px; border-bottom:1px solid #f1f5f9;";
-            div.innerHTML = `<div><span style="color:var(--accent);">[${lesson.category}]</span> <b>${lesson.title}</b></div>
+            
+            // تحسين عرض اسم القسم
+            const catDisplay = lesson.category === 'English' ? 'إنجليزي' : lesson.category;
+            
+            div.innerHTML = `<div><span style="color:var(--accent);">[${catDisplay}]</span> <b>${lesson.title}</b></div>
                 <button onclick="deleteLesson('${lessonDoc.id}')" class="delete-btn"><i class="fas fa-trash-alt"></i></button>`;
             list.appendChild(div);
         });
@@ -356,7 +387,7 @@ document.getElementById('saveQuestionBtn').onclick = async () => {
         if (confirm("هدولتي، متأكدة من الحذف؟")) await deleteDoc(doc(db, "lessons", id));
     };
 
-    // --- 3. إدارة التعليقات والإشعارات ---
+    // --- 4. إدارة التعليقات والإشعارات ---
     let lastPendingCount = 0;
     onSnapshot(query(collection(db, "comments"), orderBy("createdAt", "desc")), (snapshot) => {
         const tbody = document.getElementById('commentsData');
@@ -371,7 +402,7 @@ document.getElementById('saveQuestionBtn').onclick = async () => {
                     <td style="font-size:0.75rem;">${c.comment}</td>
                     <td><span class="status-tag ${c.status === 'approved' ? 'online' : 'offline'}">${c.status === 'approved' ? 'معتمد' : 'معلق'}</span></td>
                     <td>
-                        ${c.status === 'pending' ? `<button onclick="approveComment('${cDoc.id}')" style="padding:4px; font-size:0.7rem; background:var(--success);">اعتماد</button>` : ''}
+                        ${c.status === 'pending' ? `<button onclick="approveComment('${cDoc.id}')" style="padding:4px; font-size:0.7rem; background:var(--success); color:white; border:none; border-radius:4px; cursor:pointer;">اعتماد</button>` : ''}
                         <button onclick="deleteComment('${cDoc.id}')" class="delete-btn"><i class="fas fa-trash-alt"></i></button>
                     </td>
                 </tr>`;
@@ -388,7 +419,7 @@ document.getElementById('saveQuestionBtn').onclick = async () => {
     window.approveComment = async (id) => await updateDoc(doc(db, "comments", id), { status: "approved" });
     window.deleteComment = async (id) => { if(confirm("حذف؟")) await deleteDoc(doc(db, "comments", id)); };
 
-    // --- 4. العمليات (نشر دروس، إعلانات، خروج) ---
+    // --- 5. العمليات العامة (تنبيهات، رفع دروس، خروج) ---
     document.getElementById('sendAnnouncementBtn').onclick = async () => {
         const msg = document.getElementById('announcementText').value;
         if(msg) {
@@ -404,10 +435,33 @@ document.getElementById('saveQuestionBtn').onclick = async () => {
         const url = document.getElementById('videoUrl').value;
         if (title && url) {
             await addDoc(collection(db, "lessons"), { title, category, url, createdAt: serverTimestamp() });
-            alert("تم النشر!");
-            document.getElementById('videoTitle').value = ""; document.getElementById('videoUrl').value = "";
+            alert("تم النشر بنجاح! ✅");
+            document.getElementById('videoTitle').value = ""; 
+            document.getElementById('videoUrl').value = "";
         }
     };
+ // --- دالة تحديث صلاحية الوصول للإنجليزي (النسخة المصححة) ---
+window.toggleEnglishAccess = async (studentId, isAllowed) => {
+    try {
+        // الوصول للمستند مباشرة باستخدام الـ ID لأنه أسرع وأدق
+        const studentRef = doc(db, "students", studentId);
+        
+        await updateDoc(studentRef, { 
+            canAccessEnglish: isAllowed,
+            englishUnlockedAt: isAllowed ? serverTimestamp() : null // اختياري: لتسجيل وقت الفتح
+        });
+
+        console.log(`تم ${isAllowed ? 'تفعيل' : 'إلغاء'} صلاحية الإنجليزي بنجاح 🚀`);
+        
+        // تنبيه بسيط للأدمن فقط
+        if(isAllowed) {
+             alert("تم فتح القسم بنجاح، ستظهر الرسالة الترحيبية للطالبة عند دخولها ✨");
+        }
+    } catch (error) {
+        console.error("Error updating access:", error);
+        alert("حدث خطأ أثناء التحديث يا هدولتي 💔");
+    }
+};
 
     onSnapshot(collection(db, "quizzes"), snap => document.getElementById('totalQuizzes').innerText = snap.size);
     document.getElementById('logoutBtn').onclick = () => signOut(auth).then(() => window.location.href = "login.html");

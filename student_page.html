@@ -75,6 +75,9 @@
         .lesson-box { padding: 12px; margin-top: 8px; border-radius: 10px; background: rgba(255,255,255,0.03); cursor: pointer; transition: 0.2s; }
         .lesson-box:hover { background: rgba(251, 191, 36, 0.1); }
 
+        .category-card { background: rgba(255, 255, 255, 0.03); padding: 15px; border-radius: 20px; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.1); }
+        .engSection-box { padding: 12px; margin-top: 8px; border-radius: 10px; background: rgba(255,255,255,0.03); cursor: pointer; transition: 0.2s; }
+        .EnglishCategorySection:hover { background: rgba(251, 191, 36, 0.1); }
         /* المودالات */
         .modal-overlay, .quiz-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(10px); display: none; align-items: center; justify-content: center; z-index: 2000; }
         .quiz-window { background: var(--trust-blue); width: 400px; padding: 30px; border-radius: 24px; border: 1px solid var(--accent-gold); }
@@ -139,14 +142,7 @@
         transform: translateX(-280px); /* يرجع يدخل الشاشة */
     }
 }
-@media (max-width: 480px) {
-    header {
-        padding: 0 15px;
-    }
-    .user-profile-btn span {
-        display: none; /* نخفي اسم المستخدم ونبقي الافاتار فقط */
-    }
-}
+
     </style>
 </head>
 <body>
@@ -186,22 +182,28 @@
 </div>
         </div>
     </div>
-
-    <div class="quiz-overlay" id="quizOverlay">
-        <div class="quiz-window">
-            <div id="quizStage1">
-                <h3 style="text-align: center;">🎯 اختر مسار الاختبار</h3>
-                <div class="nav-link" style="border:1px solid rgba(255,255,255,0.1); margin:10px 0;" onclick="startChapterQuiz('cyber')">🛡️ الأمن السيبراني</div>
-                <div class="nav-link" style="border:1px solid rgba(255,255,255,0.1); margin:10px 0;" onclick="startChapterQuiz('cloud')">☁️ الحوسبة السحابية</div>
-                <div class="nav-link" style="border:1px solid rgba(255,255,255,0.1); margin:10px 0;" onclick="startChapterQuiz('programming')">💻 لغات البرمجة</div>
-            </div>
-            <div id="quizStage2" style="display: none;">
-                <h4 id="quizQuestion">...</h4>
-                <div id="quizOptions"></div>
-            </div>
-            <button onclick="closeQuiz()" style="width:100%; background:none; border:none; color:#94a3b8; margin-top:15px; cursor:pointer;">إلغاء</button>
+<div class="quiz-overlay" id="quizOverlay">
+    <div class="quiz-window">
+        
+        <div id="quizStage1">
+            <h3 style="text-align: center; margin-bottom: 20px;">🎯 اختر مسار الاختبار</h3>
+            
+            <div class="nav-link" style="border:1px solid rgba(255,255,255,0.1); margin:10px 0;" onclick="loadChapters('cyber')">🛡️ الأمن السيبراني</div>
+            <div class="nav-link" style="border:1px solid rgba(255,255,255,0.1); margin:10px 0;" onclick="loadChapters('cloud')">☁️ الحوسبة السحابية</div>
+            <div class="nav-link" style="border:1px solid rgba(255,255,255,0.1); margin:10px 0;" onclick="loadChapters('programming')">💻 لغات البرمجة</div>
+            
+            <div id="EnglishQuizOption" class="nav-link" style="border:1px solid var(--accent-gold); margin:10px 0; display: none;" onclick="loadChapters('English')">🔤 اللغة الإنجليزية</div>
         </div>
+
+        <div id="quizStage2" style="display: none;">
+            <h4 id="quizQuestion" style="color: var(--accent-gold); text-align: center; line-height: 1.6; margin-bottom: 20px;">...</h4>
+            <div id="quizOptions">
+                </div>
+        </div>
+        
+        <button onclick="closeQuiz()" style="width:100%; background:none; border:none; color:#94a3b8; margin-top:15px; cursor:pointer; font-family: 'Tajawal', sans-serif;">إلغاء</button>
     </div>
+</div>
 
     <header>
         <div class="header-logo" style="font-weight: 800; font-size: 1.2rem;">TechFlow <span style="color: var(--accent-gold);">Academy</span></div>
@@ -263,7 +265,14 @@
             <div class="category-card"><h3>🛡️ الأمن السيبراني</h3><div id="cyberLessons"></div></div>
             <div class="category-card"><h3>☁️ الحوسبة السحابية</h3><div id="cloudLessons"></div></div>
             <div class="category-card"><h3>💻 لغات البرمجة</h3><div id="programmingLessons"></div></div>
-        </div>
+       
+        <div class="category-card" id="EnglishCategorySection">
+    <h3>🔤 اللغة الإنجليزية</h3>
+    <div id="EnglishLessons"></div>
+</div>
+ </div>
+
+
     </main>
 
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
@@ -282,55 +291,65 @@
 
     let currentRating = 0;
     let currentLessonTitle = "";
+    let canAccessEnglish = false; // هذا بيحفظ هل الطالبة مسموح لها تدخل إنجليزي أو لا
 
     // --- وظائف الواجهة ---
     function toggleNotifs() { document.getElementById('notifDropdown').classList.toggle('show'); document.getElementById('notifBadge').style.display = 'none'; }
     function toggleModal() { const m = document.getElementById('profileModal'); m.style.display = (m.style.display === 'flex') ? 'none' : 'flex'; }
     // --- تحديث وظيفة عرض الاختبارات في لوحة الطالب ---
-
 async function openQuizPanel() {
     document.getElementById('quizOverlay').style.display = 'flex';
     const stage1 = document.getElementById('quizStage1');
     stage1.innerHTML = `<h3 style="text-align: center;">🎯 جاري جلب المسارات...</h3>`;
 
     try {
-        // جلب كل الاختبارات مرة واحدة لتوزيعها
+        // جلب كل الاختبارات مرة واحدة لمعرفة الأقسام المتاحة
         const snap = await db.collection("quizzes").get();
         
         if (snap.empty) {
-            stage1.innerHTML = `
-                <div style="text-align:center; padding:20px;">
-                    <p>لا توجد اختبارات مضافة حالياً 🌸</p>
-                    <small>  سيتم أضافتها قريبا.  </small>
-                </div>`;
+            stage1.innerHTML = `<div style="text-align:center; padding:20px;"><p>لا توجد اختبارات مضافة حالياً 🌸</p></div>
+                                <button onclick="closeQuiz()" style="background:var(--accent-gold); color:black; border:none; padding:8px 15px; border-radius:10px; cursor:pointer;">إغلاق</button>`;
             return;
         }
 
+        // استخراج التصنيفات الموجودة فعلياً في قاعدة البيانات
+        const availableCategories = [...new Set(snap.docs.map(doc => doc.data().category))];
+
         stage1.innerHTML = `<h3 style="text-align: center;">🎯 اختاري المسار</h3>`;
         
-        // مصفوفة المسارات المتاحة
-        const cats = [
+        // قائمة المسارات التي سنعرضها (بناءً على الصلاحية وما هو موجود في الداتابيز)
+        const allCats = [
             { id: 'cyber', name: '🛡️ الأمن السيبراني' },
             { id: 'cloud', name: '☁️ الحوسبة السحابية' },
-            { id: 'programming', name: '💻 لغات البرمجة' }
+            { id: 'programming', name: '💻 لغات البرمجة' },
+            { id: 'English', name: '🔤 اللغة الإنجليزية' }
         ];
 
-        cats.forEach(cat => {
-            const div = document.createElement('div');
-            div.className = "nav-link";
-            div.style.border = "1px solid rgba(255,255,255,0.1)";
-            div.style.margin = "10px 0";
-            div.innerHTML = cat.name;
-            div.onclick = () => loadChapters(cat.id); // استدعاء وظيفة تحميل الفصول
-            stage1.appendChild(div);
+        allCats.forEach(cat => {
+            // شروط العرض: 1. المسار موجود فيه أسئلة، 2. لو كان إنجليزي لازم يكون عندها صلاحية
+            const hasQuestions = availableCategories.includes(cat.id);
+            const isEnglishButNoAccess = (cat.id === 'English' && !canAccessEnglish);
+
+            if (hasQuestions && !isEnglishButNoAccess) {
+                const div = document.createElement('div');
+                div.className = "nav-link";
+                div.style.cssText = "border: 1px solid rgba(255,255,255,0.1); margin: 10px 0; cursor: pointer; text-align: center; padding: 15px; background: rgba(255,255,255,0.05); border-radius: 12px;";
+                div.innerHTML = cat.name;
+                div.onclick = () => loadChapters(cat.id);
+                stage1.appendChild(div);
+            }
         });
 
+        // إذا لم يظهر أي مسار بعد الفلترة
+        if (stage1.querySelectorAll('.nav-link').length === 0) {
+            stage1.innerHTML += `<p style="text-align:center; font-size:0.8rem;">لا توجد اختبارات متاحة لصلاحياتك حالياً 🌸</p>`;
+        }
+
     } catch (error) {
-        console.error("Error:", error);
-        stage1.innerHTML = "حدث خطأ في الاتصال بقاعدة البيانات";
+        console.error("Error fetching quizzes:", error);
+        stage1.innerHTML = "حدث خطأ في الاتصال بقاعدة البيانات ❌";
     }
 }
-
 async function loadChapters(cat) {
     const quizStage1 = document.getElementById('quizStage1');
     quizStage1.innerHTML = `<h4 style="text-align:center;">جاري تحميل الفصول...</h4>`;
@@ -344,7 +363,6 @@ async function loadChapters(cat) {
         `;
         return;
     }
-
     // استخراج أسماء الفصول الفريدة
     const chapters = [...new Set(snap.docs.map(doc => doc.data().chapter))];
 
@@ -401,60 +419,91 @@ async function startChapterQuiz(cat, chapter) {
         const stars = document.querySelectorAll('#starRating span');
         stars.forEach((s, i) => s.style.opacity = i < n ? "1" : "0.3");
     }
-// --- المصادقة وجلب البيانات + ميزة اشتقنا لكِ ---
-    auth.onAuthStateChanged(async (user) => {
-        if (user) {
-            document.getElementById('userEmail').innerText = user.email;
-            
-            const userRef = db.collection("students").doc(user.uid);
-            const doc = await userRef.get();
-            
+// --- المصادقة وجلب البيانات + ميزات الترحيب الذكية ---
+auth.onAuthStateChanged((user) => {
+    if (user) {
+        document.getElementById('userEmail').innerText = user.email;
+        const userRef = db.collection("students").doc(user.uid);
+
+        // استخدام onSnapshot للمراقبة اللحظية (تحديثات فورية بدون ريفريش)
+        userRef.onSnapshot((doc) => {
             if (doc.exists) {
                 const data = doc.data();
                 const name = data.first_name || "طالبة تيك فلو";
                 
-                // --- ميزة "اشتقنا لكِ" ---
-                if (data.lastSeen) {
-                    const lastSeenDate = data.lastSeen.toDate();
-                    const now = new Date();
-                    const diffTime = Math.abs(now - lastSeenDate);
-                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                // 1. تحديث متغير الصلاحية العالمي
+                canAccessEnglish = data.canAccessEnglish || false;
 
-                    // إذا غابت أكثر من 3 أيام (مثلاً 3 أيام فأكثر)
-                    if (diffDays >= 3) {
-                        setTimeout(() => {
-                            alert(`أهلاً بعودتكِ يا ${name} 🌸.. اشتقنا لكِ ولحماسكِ في الأكاديمية! دعيننا نكمل رحلة الإبداع اليوم ✨`);
-                        }, 1500); // يظهر التنبيه بعد 1.5 ثانية من دخولها
-                    }
+                // 2. ميزة ترحيب المسار الخاص (تظهر مرة واحدة فقط عند التفعيل)
+                if (canAccessEnglish && !localStorage.getItem('welcomedEnglish')) {
+                    setTimeout(() => {
+                        alert(`مفاجأة يا ${name}! 🎉 تم فتح مسار اللغة الإنجليزية لكِ بنجاح. استمتعي برحلتكِ الجديدة معنا ✨`);
+                        localStorage.setItem('welcomedEnglish', 'true'); 
+                    }, 1000);
                 }
 
-                // --- تحديث بيانات الواجهة ---
-                document.getElementById('headerUserName').innerText = name;
-                document.getElementById('modalFullName').innerText = name;
-                const char = name.charAt(0).toUpperCase();
-                document.getElementById('headerAvatar').innerText = char;
-                document.getElementById('modalAvatar').innerText = char;
+                // 3. ميزة "اشتقنا لكِ" (تظهر فقط عند أول دخول إذا غابت الطالبة يوم أو أكثر)
+                if (data.lastSeen && !sessionStorage.getItem('seenMissYou')) {
+                    const lastSeenDate = data.lastSeen.toDate();
+                    const now = new Date();
+                    const diffDays = Math.floor((now - lastSeenDate) / (1000 * 60 * 60 * 24));
 
-                // --- تحديث "آخر ظهور" و "حالة النشاط" في قاعدة البيانات ---
-                await userRef.update({
-                    lastSeen: firebase.firestore.FieldValue.serverTimestamp(),
-                    isOnline: true
+                    if (diffDays >= 1) {
+                        setTimeout(() => {
+                            alert(`أهلاً بعودتكِ يا ${name} 🌸.. اشتقنا لكِ ولحماسكِ! دعيننا نكمل رحلة الإبداع اليوم ✨`);
+                        }, 2000);
+                    }
+                    sessionStorage.setItem('seenMissYou', 'true'); // تظهر مرة واحدة في الجلسة فقط
+                }
+
+                // 4. التحكم في ظهور أقسام الإنجليزي في الواجهة
+                const engSection = document.getElementById('EnglishCategorySection');
+                const engQuizBtn = document.getElementById('EnglishQuizOption');
+                
+                if (canAccessEnglish) {
+                    if(engSection) engSection.style.display = 'block';
+                    if(engQuizBtn) engQuizBtn.style.display = 'block';
+                } else {
+                    if(engSection) engSection.style.display = 'none';
+                    if(engQuizBtn) engQuizBtn.style.display = 'none';
+                }
+
+                // 5. تحديث بيانات الواجهة (الاسم والأفاتار)
+                const userNameElements = ['headerUserName', 'modalFullName'];
+                userNameElements.forEach(id => {
+                    if(document.getElementById(id)) document.getElementById(id).innerText = name;
+                });
+
+                const char = name.charAt(0).toUpperCase();
+                const avatarElements = ['headerAvatar', 'modalAvatar'];
+                avatarElements.forEach(id => {
+                    if(document.getElementById(id)) document.getElementById(id).innerText = char;
                 });
             }
-            
-            loadLessons();
-            listenNotifs();
-        } else {
-            window.location.href = "login.html";
-        }
-    });
+        });
 
+        // تحديث "آخر ظهور" مرة واحدة عند تسجيل الدخول
+        userRef.update({
+            lastSeen: firebase.firestore.FieldValue.serverTimestamp(),
+            isOnline: true
+        }).catch(err => console.error("Update error:", err));
+
+        loadLessons();
+        listenNotifs();
+    } else {
+        window.location.href = "login.html";
+    }
+});
     function loadLessons() {
         db.collection("lessons").orderBy("createdAt", "desc").onSnapshot(snap => {
-            const sections = { cyber: 'cyberLessons', cloud: 'cloudLessons', programming: 'programmingLessons' };
+            const sections = { cyber: 'cyberLessons', cloud: 'cloudLessons', programming: 'programmingLessons',English:'EnglishLessons' };
             Object.values(sections).forEach(id => document.getElementById(id).innerHTML = "");
             snap.forEach(doc => {
                 const lesson = doc.data();
+                // --- هذا هو الجزء المسؤول عن الصلاحية ---
+            if (lesson.category === "English" && !canAccessEnglish) {
+                return; // إذا كان الدرس إنجليزي وما عندها صلاحية، تجاهله ولا تعرضه
+            }
                 const div = document.createElement('div');
                 div.className = "lesson-box";
                 div.innerHTML = `<i class="fas fa-play-circle" style="color:var(--accent-gold); margin-left:10px;"></i> ${lesson.title}`;
@@ -674,17 +723,6 @@ function renderNotifUI(container, badge, sound, info, shouldAlert) {
         }
     }
 }
-
-// وظيفة مساعدة لإظهار الشريط العلوي
-function showTopBar(msg) {
-    const topBar = document.getElementById('globalAnnouncement');
-    const msgSpan = document.getElementById('announcementMsg');
-    if(topBar && msgSpan) {
-        msgSpan.innerText = msg;
-        topBar.style.display = 'block';
-    }
-}
-
 
     async function submitComment() {
         const text = document.getElementById('commentInput').value;

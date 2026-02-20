@@ -376,59 +376,52 @@ style="display:none; margin-top:15px; background:#10b981; color:white; border:no
 const savedEmail = localStorage.getItem("userEmail");
 
 async function initializeStudentPortal() {
-    if (!savedEmail) {
-        window.location.href = "login.html";
-        return;
-    }
+    const savedEmail = localStorage.getItem("userEmail");
+    if (!savedEmail) { window.location.href = "login.html"; return; }
 
     try {
-        const querySnapshot = await db.collection("students").where("email", "==", savedEmail).get();
+        // 1. استخدام onSnapshot بدلاً من get لجعل الصلاحيات "حية"
+        db.collection("students").where("email", "==", savedEmail)
+            .onSnapshot(async (querySnapshot) => {
+                if (querySnapshot.empty) { window.location.href = "login.html"; return; }
 
-        if (querySnapshot.empty) {
-            window.location.href = "login.html";
-            return;
-        }
+                const userDoc = querySnapshot.docs[0];
+                const userData = userDoc.data();
+                currentUserId = userDoc.id;
+                const userIP = await getUserIP();
 
-        const userDoc = querySnapshot.docs[0];
-        const userData = userDoc.data();
-        const userIP = await getUserIP(); // جلب الـ IP الحالي للمقارنة
+                // --- تحديث الصلاحيات فوراً في المتغيرات العالمية ---
+                canAccessEnglish = userData.canAccessEnglish || false;
+                canAccessCommSkills = userData.canAccessCommSkills || false;
 
-        // --- 🔒 نظام المقارنة الصارم (Device Comparison) ---
-        if (savedEmail !== "test@gmail.com") {
-            let allowedIPs = userData.registeredIPs || [];
-            
-            // التأكد من وجود جهاز مسجل واحد على الأقل
-            if (userData.registeredIP && !allowedIPs.includes(userData.registeredIP)) {
-                allowedIPs.push(userData.registeredIP);
-            }
+                // --- 🔒 نظام الأمان والمقارنة ---
+                if (savedEmail !== "test@gmail.com") {
+                    let registeredIPs = userData.registeredIPs || [];
+                    const isKnown = registeredIPs.includes(userIP);
 
-            // 1. التحقق من عدد الأجهزة (المقارنة)
-            const isKnownDevice = allowedIPs.includes(userIP);
-
-            if (!isKnownDevice) {
-                // إذا كان الجهاز غير معروف، نرى هل هناك مكان شاغر؟
-                if (allowedIPs.length < 2) {
-                    allowedIPs.push(userIP);
-                    await userDoc.ref.update({ registeredIPs: allowedIPs });
-                    alert("تم تسجيل جهازكِ الجديد بنجاح ✨");
-                } else {
-                    // 🚨 هنا عملية المنع عند فشل المقارنة وتجاوز العدد
-                    alert("🛡️ أمن الحساب: عذراً، هذا الحساب مسجل على جهازين آخرين بالفعل.");
-                    localStorage.removeItem("userEmail"); // مسح الإيميل لمنع الدخول التلقائي
-                    window.location.href = "login.html";
-                    return;
+                    if (!isKnown) {
+                        if (registeredIPs.length < 2) {
+                            registeredIPs.push(userIP);
+                            await userDoc.ref.update({ registeredIPs: registeredIPs });
+                        } else {
+                            alert("🛡️ عذراً، هذا الحساب مسجل على جهازين آخرين.");
+                            localStorage.removeItem("userEmail");
+                            window.location.href = "login.html";
+                            return;
+                        }
+                    }
                 }
-            }
-        }
 
-        // --- تشغيل المنصة بعد نجاح المقارنة ---
-        updateUIUserInfo(userData.first_name || "طالبة", savedEmail);
-        loadLessons();
-        listenNotifs();
-        updateVisibility();
+                // --- 🚀 تشغيل/تحديث الواجهة والدروس فوراً ---
+                updateUIUserInfo(userData.first_name || "طالبة", savedEmail);
+                updateVisibility(); // لإظهار الأقسام المخفية
+                loadLessons();     // لجلب دروس الإنجليزي والمهارات فوراً
+                listenNotifs();
+                checkWelcomeMessages(userData.first_name || "طالبة"); // لعرض رسالة الترحيب بالمادة الجديدة
+            });
 
     } catch (error) {
-        console.error("Security Check Error:", error);
+        console.error("Portal Error:", error);
     }
 }
 

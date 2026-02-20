@@ -46,7 +46,7 @@
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, collection, query, where, getDocs, doc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getFirestore, collection, query, where, getDocs, doc, updateDoc, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyCB76yITZG4XNa6AXNPkIR8PxLZuMv1j3Y",
@@ -63,90 +63,120 @@ async function getUserIP() {
         const res = await fetch('https://api.ipify.org?format=json');
         const data = await res.json();
         return data.ip;
-    } catch (e) { return "unknown"; }
+    } catch (e) { return "unknown_ip"; }
 }
 
-// وظيفة الدخول بالحساب التجريبي (تعبئة تلقائية)
-document.getElementById('testLoginBtn').onclick = (e) => {
-    e.preventDefault();
-    document.getElementById('userEmail').value = "test@gmail.com";
-    document.getElementById('userPass').value = "test12";
-    document.getElementById('loginBtn').click();
-};
-
+// --- زر الدخول الرئيسي المطور ---
 document.getElementById('loginBtn').onclick = async () => {
-    const email = document.getElementById('userEmail').value.trim().toLowerCase();
-    const pass = document.getElementById('userPass').value;
+    const emailInput = document.getElementById('userEmail').value.trim().toLowerCase();
+    const passInput = document.getElementById('userPass').value.trim();
     
-    if(!email || !pass) {
-        alert("تأكدي من تعبئة جميع الحقول 🌸");
+    if(!emailInput || !passInput) {
+        alert("تأكدي من كتابة الإيميل والباسورد يا هدولتي 🌸");
         return;
     }
 
     document.getElementById('spinner').style.display = "block";
     document.getElementById('btnText').style.display = "none";
 
-    // 1. دخول الأدمن
-    if (email === "hadeelkab@gmail.com" && pass === "hadeel@") {
-        window.location.href = "admin_page.html";
-        return;
+    // دخول الإدارة
+    if (emailInput === "hadeelkab@gmail.com" && passInput === "hadeel@") {
+        localStorage.setItem("userEmail", emailInput);
+        window.location.href = "admin_page.html"; return;
     }
 
     try {
-        const q = query(collection(db, "students"), where("email", "==", email));
+        const q = query(collection(db, "students"), where("email", "==", emailInput));
         const snap = await getDocs(q);
 
         if (snap.empty) {
-            alert("عذراً، هذا الحساب غير مسجل لدينا ❌");
+            alert("هذا الإيميل غير مسجل ❌");
         } else {
             const studentDoc = snap.docs[0];
             const studentData = studentDoc.data();
+            const currentIP = await getUserIP();
 
-            if (String(studentData.pass) === String(pass)) {
+            if (String(studentData.pass).trim() === String(passInput)) {
                 
-                // 2. استثناء الحساب التجريبي من قيود الأجهزة
-                if (email === "test@gmail.com") {
-                    localStorage.setItem("userEmail", email);
-                    window.location.href = "student_page.html";
-                    return;
+                // استثناء الحساب التجريبي
+                if (emailInput === "test@gmail.com") {
+                    localStorage.setItem("userEmail", emailInput);
+                    window.location.href = "student_page.html"; return;
                 }
 
-                // 3. منطق الطلاب العاديين (فحص الأجهزة)
-                const currentIP = await getUserIP();
+                // --- منطق بصمة الجهاز الذكية ---
+                let deviceID = localStorage.getItem("tf_device_id");
+                if (!deviceID) {
+                    deviceID = 'dev_' + Math.random().toString(36).substr(2, 9);
+                    localStorage.setItem("tf_device_id", deviceID);
+                }
+
+                let registeredDevices = studentData.registeredDevices || [];
                 let registeredIPs = studentData.registeredIPs || [];
-                
-                if (studentData.registeredIP && !registeredIPs.includes(studentData.registeredIP)) {
-                    registeredIPs.push(studentData.registeredIP);
-                }
 
-                const isKnownDevice = registeredIPs.includes(currentIP);
+                // التحقق: هل الجهاز معروف بالبصمة أو بالـ IP؟
+                const isKnown = registeredDevices.includes(deviceID) || registeredIPs.includes(currentIP);
 
-                if (isKnownDevice || registeredIPs.length < 2) {
-                    if (!isKnownDevice) { registeredIPs.push(currentIP); }
+                if (isKnown || registeredDevices.length < 2) {
+                    
+                    // تحديث المصفوفات إذا كان الجهاز جديداً
+                    if (!registeredDevices.includes(deviceID)) registeredDevices.push(deviceID);
+                    if (!registeredIPs.includes(currentIP)) registeredIPs.push(currentIP);
 
                     await updateDoc(doc(db, "students", studentDoc.id), { 
-                        registeredIPs: registeredIPs, 
+                        registeredDevices: registeredDevices,
+                        registeredIPs: registeredIPs,
                         lastLogin: serverTimestamp(),
-                        registeredIP: currentIP,
                         isOnline: true
                     });
 
-                    localStorage.setItem("userEmail", email);
+                    localStorage.setItem("userEmail", emailInput);
                     window.location.href = "student_page.html";
                 } else {
-                    alert("🛡️ حماية الأجهزة: هذا الحساب مسجل على جهازين آخرين.");
+                    alert("🛡️ حماية الأجهزة: مسموح بجهازين فقط. يرجى مراجعة م. هديل.");
                 }
-            } else {
+            } els// --- 🔒 نظام حماية الأجهزة الموحد (Login Version) ---
+let registeredIPs = studentData.registeredIPs || [];
+
+// التحقق: هل هذا الـ IP معروف؟
+const isKnownIP = registeredIPs.includes(currentIP);
+
+if (isKnownIP || registeredIPs.length < 2) {
+    if (!isKnownIP) {
+        registeredIPs.push(currentIP);
+    }
+    
+    // تحديث السيرفر
+    await updateDoc(doc(db, "students", studentDoc.id), { 
+        registeredIPs: registeredIPs,
+        lastLogin: serverTimestamp(),
+        isOnline: true
+    });
+
+    // حفظ الإيميل فقط دون مسح الكل لضمان ثبات الجلسة
+    localStorage.setItem("userEmail", emailInput);
+    window.location.href = "student_page.html";
+} else {
+    alert("🛡️ حماية الأجهزة: مسموح بجهازين فقط. يرجى مراجعة م. هديل.");
+}
+ {
                 alert("كلمة المرور غير صحيحة 🔑");
             }
         }
     } catch (err) { 
-        console.error("Error:", err);
-        alert("خطأ في الاتصال ❌"); 
-    } finally {
-        document.getElementById('spinner').style.display = "none";
-        document.getElementById('btnText').style.display = "block";
+        console.error(err);
+        alert("خطأ في النظام ❌"); 
     }
+    document.getElementById('spinner').style.display = "none";
+    document.getElementById('btnText').style.display = "block";
+};
+
+// --- باقي الأزرار (تجريبي وإعادة تعيين) ---
+document.getElementById('testLoginBtn').onclick = (e) => {
+    e.preventDefault();
+    document.getElementById('userEmail').value = "test@gmail.com";
+    document.getElementById('userPass').value = "test12";
+    document.getElementById('loginBtn').click();
 };
 </script>
 </body>

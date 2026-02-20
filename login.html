@@ -52,8 +52,9 @@
 </div>
 
 <script type="module">
+// استيراد المكتبات بنسخة محددة لضمان الاستقرار
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, collection, query, where, getDocs, doc, updateDoc, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getFirestore, collection, query, where, getDocs, doc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyCB76yITZG4XNa6AXNPkIR8PxLZuMv1j3Y",
@@ -65,78 +66,94 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
+// دالة جلب الـ IP مع معالجة الخطأ
 async function getUserIP() {
     try {
         const res = await fetch('https://api.ipify.org?format=json');
         const data = await res.json();
         return data.ip;
-    } catch (e) { return "unknown"; }
+    } catch (e) { 
+        console.warn("تعذر جلب الـ IP، سيتم استخدام معرف عشوائي مؤقت.");
+        return "device_" + Math.floor(Math.random() * 1000); 
+    }
 }
-// --- 1. منطق تسجيل الدخول الرئيسي (نسخة الاستقرار) هدولتي ---
+
 document.getElementById('loginBtn').onclick = async () => {
-    const email = document.getElementById('userEmail').value.trim();
+    const email = document.getElementById('userEmail').value.trim().toLowerCase();
     const pass = document.getElementById('userPass').value;
-    if(!email || !pass) return;
+    
+    if(!email || !pass) {
+        alert(" تأكدي من تعبئة جميع الحقول 🌸");
+        return;
+    }
 
     document.getElementById('spinner').style.display = "block";
     document.getElementById('btnText').style.display = "none";
 
-    // حساب الإدارة
+    // دخول الأدمن (استثناء)
     if (email === "hadeelkab@gmail.com" && pass === "hadeel@") {
-        window.location.href = "admin_page.html"; return;
+        window.location.href = "admin_page.html";
+        return;
     }
 
     try {
+        // البحث عن الطالبة بالإيميل
         const q = query(collection(db, "students"), where("email", "==", email));
         const snap = await getDocs(q);
 
         if (snap.empty) {
-            alert("الحساب غير موجود ❌");
+            alert("عذراً، هذا الحساب غير مسجل لدينا ❌");
         } else {
             const studentDoc = snap.docs[0];
             const studentData = studentDoc.data();
             const currentIP = await getUserIP();
 
-            if (studentData.pass === pass) {
-                // التأكد من وجود المصفوفة أو إنشائها
+            // التحقق من كلمة المرور (بشكل نصي بسيط كما في الفايربيس عندك)
+            if (String(studentData.pass) === String(pass)) {
+                
                 let registeredIPs = studentData.registeredIPs || [];
                 
-                // دمج IP الحقل القديم لضمان عدم فقدان الوصول
+                // دمج IP الحقل القديم لضمان عدم التعليق
                 if (studentData.registeredIP && !registeredIPs.includes(studentData.registeredIP)) {
                     registeredIPs.push(studentData.registeredIP);
                 }
 
                 const isKnownDevice = registeredIPs.includes(currentIP);
-                
-                // المنطق: إذا كان الجهاز معروفاً أو هناك مكان شاغر (أقل من 2)
+
+                // السماح بالدخول إذا كان الجهاز معروفاً أو السعة متاحة (< 2)
                 if (isKnownDevice || registeredIPs.length < 2) {
                     
                     if (!isKnownDevice) {
                         registeredIPs.push(currentIP);
                     }
 
-                    // التحديث في Firestore
+                    // تحديث بيانات الدخول في Firestore
                     await updateDoc(doc(db, "students", studentDoc.id), { 
                         registeredIPs: registeredIPs, 
                         lastLogin: serverTimestamp(),
-                        registeredIP: currentIP // للحفاظ على التوافق
+                        registeredIP: currentIP,
+                        isOnline: true
                     });
 
+                    // حفظ الإيميل في التخزين المحلي لاستخدامه في صفحة الطالبة
                     localStorage.setItem("userEmail", email);
+                    
+                    // الانتقال لصفحة الطالبة
                     window.location.href = "student_page.html";
                 } else {
-                    alert("🛡️ الحساب مسجل على جهازين آخرين. يرجى مراجعة م. هديل.");
+                    alert("🛡️ حماية الأجهزة: هذا الحساب يعمل حالياً على جهازين آخرين. يرجى مراجعة الإدارة لإعادة ضبط الأجهزة.");
                 }
             } else {
-                alert("كلمة المرور خطأ 🔑");
+                alert("كلمة المرور غير صحيحة 🔑");
             }
         }
     } catch (err) { 
-        console.error("Login Error:", err);
-        alert("خطأ في الاتصال بالقاعدة ❌"); 
+        console.error("Firebase Error:", err);
+        alert("حدث خطأ أثناء الاتصال بالنظام. تأكدي من جودة الإنترنت ❌"); 
+    } finally {
+        document.getElementById('spinner').style.display = "none";
+        document.getElementById('btnText').style.display = "block";
     }
-    document.getElementById('spinner').style.display = "none";
-    document.getElementById('btnText').style.display = "block";
 };
 </script>
 </body>

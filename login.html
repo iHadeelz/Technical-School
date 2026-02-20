@@ -65,9 +65,6 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// متغير عالمي لحفظ الإيميل المراد إعادة تعيينه
-let emailToReset = "";
-
 async function getUserIP() {
     try {
         const res = await fetch('https://api.ipify.org?format=json');
@@ -75,8 +72,7 @@ async function getUserIP() {
         return data.ip;
     } catch (e) { return "unknown"; }
 }
-
-// --- 1. منطق تسجيل الدخول الرئيسي هدولتي ---
+// --- 1. منطق تسجيل الدخول الرئيسي (نسخة الاستقرار) هدولتي ---
 document.getElementById('loginBtn').onclick = async () => {
     const email = document.getElementById('userEmail').value.trim();
     const pass = document.getElementById('userPass').value;
@@ -85,6 +81,7 @@ document.getElementById('loginBtn').onclick = async () => {
     document.getElementById('spinner').style.display = "block";
     document.getElementById('btnText').style.display = "none";
 
+    // حساب الإدارة
     if (email === "hadeelkab@gmail.com" && pass === "hadeel@") {
         window.location.href = "admin_page.html"; return;
     }
@@ -101,94 +98,46 @@ document.getElementById('loginBtn').onclick = async () => {
             const currentIP = await getUserIP();
 
             if (studentData.pass === pass) {
+                // التأكد من وجود المصفوفة أو إنشائها
                 let registeredIPs = studentData.registeredIPs || [];
                 
+                // دمج IP الحقل القديم لضمان عدم فقدان الوصول
                 if (studentData.registeredIP && !registeredIPs.includes(studentData.registeredIP)) {
                     registeredIPs.push(studentData.registeredIP);
                 }
 
                 const isKnownDevice = registeredIPs.includes(currentIP);
-                const hasSpaceForNewDevice = registeredIPs.length < 2;
-
-                if (isKnownDevice || hasSpaceForNewDevice) {
+                
+                // المنطق: إذا كان الجهاز معروفاً أو هناك مكان شاغر (أقل من 2)
+                if (isKnownDevice || registeredIPs.length < 2) {
+                    
                     if (!isKnownDevice) {
                         registeredIPs.push(currentIP);
                     }
 
+                    // التحديث في Firestore
                     await updateDoc(doc(db, "students", studentDoc.id), { 
                         registeredIPs: registeredIPs, 
                         lastLogin: serverTimestamp(),
-                        registeredIP: currentIP
+                        registeredIP: currentIP // للحفاظ على التوافق
                     });
 
                     localStorage.setItem("userEmail", email);
                     window.location.href = "student_page.html";
                 } else {
-                    alert("🛡️ عذراً، هذا الحساب مسجل على جهازين بالفعل.");
+                    alert("🛡️ الحساب مسجل على جهازين آخرين. يرجى مراجعة م. هديل.");
                 }
             } else {
                 alert("كلمة المرور خطأ 🔑");
             }
         }
-    } catch (err) { alert("خطأ في النظام ❌"); }
+    } catch (err) { 
+        console.error("Login Error:", err);
+        alert("خطأ في الاتصال بالقاعدة ❌"); 
+    }
     document.getElementById('spinner').style.display = "none";
     document.getElementById('btnText').style.display = "block";
-};
-
-// --- 2. منطق فتح نافذة استعادة كلمة المرور ---
-document.getElementById('resetPassBtn').onclick = async (e) => {
-    e.preventDefault();
-    emailToReset = document.getElementById('userEmail').value.trim();
-    if (!emailToReset) { 
-        alert("،  الرجاء كتابة البريد أولاً 🌸"); 
-        return; 
-    }
-
-    const q = query(collection(db, "students"), where("email", "==", emailToReset));
-    const snap = await getDocs(q);
-    if (snap.empty) alert("البريد غير مسجل ❌");
-    else document.getElementById('resetModal').style.display = 'flex';
-};
-
-// مقياس القوة
-document.getElementById('newPass').oninput = (e) => {
-    const pass = e.target.value;
-    const bar = document.getElementById('strengthBar');
-    const text = document.getElementById('strengthText');
-    if(pass.length < 6) { bar.style.width = '30%'; bar.style.background = '#ef4444'; text.innerText = "ضعيفة جداً ❌"; }
-    else if(pass.length < 10) { bar.style.width = '60%'; bar.style.background = '#fbbf24'; text.innerText = "متوسطة ⚠️"; }
-    else { bar.style.width = '100%'; bar.style.background = '#10b981'; text.innerText = "قوية جداً 💪"; }
-};
-
-// حفظ كلمة المرور الجديدة
-document.getElementById('saveNewPassBtn').onclick = async () => {
-    const newPass = document.getElementById('newPass').value;
-    const confirmPass = document.getElementById('confirmNewPass').value;
-    const currentIP = await getUserIP();
-
-    if (newPass.length < 6) { alert("6 رموز على الأقل 🛡️"); return; }
-    if (newPass !== confirmPass) { alert("عدم تطابق ❌"); return; }
-
-    try {
-        const q = query(collection(db, "students"), where("email", "==", emailToReset));
-        const snap = await getDocs(q);
-        const userDoc = snap.docs[0];
-
-        await updateDoc(doc(db, "students", userDoc.id), { pass: newPass });
-
-        await addDoc(collection(db, "adminNotifications"), {
-            type: "PASSWORD_CHANGE",
-            studentName: userDoc.data().first_name || "طالبة",
-            email: emailToReset,
-            detectedIP: currentIP,
-            time: serverTimestamp()
-        });
-
-        alert("تم التحديث! يمكنك الدخول الآن ✨");
-        document.getElementById('resetModal').style.display = 'none';
-    } catch (e) { alert("حدث خطأ أثناء التحديث ❌"); }
 };
 </script>
 </body>
 </html>
-

@@ -369,81 +369,92 @@ style="display:none; margin-top:15px; background:#10b981; color:white; border:no
         } catch (error) { return "unknown"; }
     }
 // --- 1. نظام مراقبة الدخول والأمان المطور (جهازين) ---
- // --- 1. نظام مراقبة الدخول والأمان المطور (Smart Gatekeeper) ---
-auth.onAuthStateChanged(async (user) => {
-    if (user) {
-        currentUserId = user.uid;
-        const userIP = await getUserIP();
-        const userRef = db.collection("students").doc(user.uid);
-        
-        try {
-            const userDoc = await userRef.get();
-            if (userDoc.exists) {
-                const userData = userDoc.data();
-                const name = userData.first_name || "طالبة تيك فلو";
+//auth.onAuthStateChanged(async (user) => {
+ // --- 1. نظام مراقبة الدخول الذكي (Smart Access Engine) ---
 
-                // --- مرحلة فحص الأمان الذكي ---
-                if (user.email !== "test@gmail.com") {
-                    let allowedIPs = userData.registeredIPs || [];
-                    
-                    // توافقية مع الحقل القديم
-                    if (userData.registeredIP && !allowedIPs.includes(userData.registeredIP)) {
-                        allowedIPs.push(userData.registeredIP);
-                    }
+// جلب الإيميل المحفوظ فوراً بمجرد فتح الصفحة
+const savedEmail = localStorage.getItem("userEmail");
 
-                    // الحالة أ: الطالبة تدخل لأول مرة أو مسحتِ لها أجهزتها
-                    if (allowedIPs.length === 0) {
-                        allowedIPs.push(userIP);
-                        await userRef.update({ registeredIPs: allowedIPs, registeredIP: userIP });
-                    } 
-                    // الحالة ب: جهاز جديد والمجال متاح لجهاز ثانٍ
-                    else if (allowedIPs.length < 2 && !allowedIPs.includes(userIP)) {
-                        allowedIPs.push(userIP);
-                        await userRef.update({ registeredIPs: allowedIPs });
-                        alert(`تم تسجيل جهازكِ الثاني بنجاح يا ${name} ✨`);
-                    }
-                    // الحالة ج: جهاز غريب والمجال ممتلئ (المنع)
-                    else if (!allowedIPs.includes(userIP)) {
-                        alert("عذراً، هذا الجهاز غير مسجل (مسموح بجهازين فقط) 🛡️");
-                        // إرسال تنبيه أمني لهدولتي
-                        await db.collection("adminNotifications").add({
-                            type: "SECURITY_ALERT",
-                            studentName: name,
-                            detectedIP: userIP,
-                            time: firebase.firestore.FieldValue.serverTimestamp()
-                        });
-                        auth.signOut();
-                        return;
-                    }
-                }
-
-                // --- مرحلة تشغيل محرك الأكاديمية ---
-                await userRef.update({ 
-                    lastSeen: firebase.firestore.FieldValue.serverTimestamp(), 
-                    isOnline: true 
-                });
-
-                loadLessons();
-                listenNotifs();
-
-                userRef.onSnapshot((doc) => {
-                    if (doc.exists) {
-                        const data = doc.data();
-                        canAccessEnglish = data.canAccessEnglish || false;
-                        canAccessCommSkills = data.canAccessCommSkills || false;
-                        updateUIUserInfo(name, user.email);
-                        checkWelcomeMessages(name); // تفعيل الترحيب بالمسارات الجديدة
-                        updateVisibility();
-                    }
-                });
-            }
-        } catch (error) {
-            console.error("Auth Error:", error);
-        }
-    } else {
-        if (window.location.pathname !== "/login.html") window.location.href = "login.html";
+// دالة التحقق من البيانات والبدء
+async function initializeStudentPortal() {
+    if (!savedEmail) {
+        console.log("No saved email found, redirecting...");
+        window.location.href = "login.html";
+        return;
     }
-});
+
+    try {
+        // البحث في قاعدة البيانات عن الطالبة باستخدام الإيميل مباشرة
+        const querySnapshot = await db.collection("students").where("email", "==", savedEmail).get();
+
+        if (querySnapshot.empty) {
+            console.log("User not found in Firestore");
+            window.location.href = "login.html";
+            return;
+        }
+
+        const userDoc = querySnapshot.docs[0];
+        currentUserId = userDoc.id;
+        const userData = userDoc.data();
+        const name = userData.first_name || "طالبة تيك فلو";
+        const userIP = await getUserIP();
+
+        // --- نظام حماية الأجهزة (Smart Check) ---
+        if (savedEmail !== "test@gmail.com") {
+            let allowedIPs = userData.registeredIPs || [];
+            
+            // التوافق مع الحقل القديم
+            if (userData.registeredIP && !allowedIPs.includes(userData.registeredIP)) {
+                allowedIPs.push(userData.registeredIP);
+            }
+
+            if (allowedIPs.length === 0) {
+                allowedIPs.push(userIP);
+                await userDoc.ref.update({ registeredIPs: allowedIPs, registeredIP: userIP });
+            } else if (allowedIPs.length < 2 && !allowedIPs.includes(userIP)) {
+                allowedIPs.push(userIP);
+                await userDoc.ref.update({ registeredIPs: allowedIPs });
+                alert(`جهاز جديد؟ منورة يا ${name} ✨`);
+            } else if (!allowedIPs.includes(userIP)) {
+                alert("🛡️ حماية: مسموح بجهازين فقط لهذا الحساب.");
+                localStorage.clear();
+                window.location.href = "login.html";
+                return;
+            }
+        }
+
+        // --- تشغيل الواجهة ---
+        updateUIUserInfo(name, savedEmail);
+       // loadLessons();
+        listenNotifs();
+        updateVisibility();
+
+        // تحديث النشاط (اختياري)
+        userDoc.ref.update({ lastSeen: firebase.firestore.FieldValue.serverTimestamp(), isOnline: true });
+
+        // مراقبة التحديثات اللحظية (تغيير الصلاحيات أو الإعلانات)
+        userDoc.ref.onSnapshot((doc) => {
+            if (doc.exists) {
+                const data = doc.data();
+                canAccessEnglish = data.canAccessEnglish || false;
+                canAccessCommSkills = data.canAccessCommSkills || false;
+                
+                updateVisibility();
+                loadLessons();
+            }
+             
+        });
+
+    } catch (error) {
+        console.error("Critical Initialization Error:", error);
+        // window.location.href = "login.html"; // نفعلها فقط بعد التأكد من عمل الكود
+    }
+}
+
+// تشغيل الدالة فوراً عند تحميل الصفحة
+
+initializeStudentPortal();
+ 
 
 // تعديل بسيط في دالة تشغيل الفيديو لإظهار التعليقات
 function playVideo(url, title) {
@@ -494,28 +505,42 @@ function playVideo(url, title) {
 
     // --- 3. إدارة المحتوى والتعليقات (بدون حذف) ---
 async function loadLessons() {
+    // 1. الوصول إلى الحاويات وتفريغها فوراً قبل أي عملية
+    const sections = { 
+        cyber: 'cyberLessons', 
+        cloud: 'cloudLessons', 
+        programming: 'programmingLessons', 
+        English: 'EnglishLessons',
+        commSkills: 'commSkillsLessons' 
+    };
 
+    // تفريغ القوائم لضمان عدم التكرار
+    Object.values(sections).forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.innerHTML = `<p style="font-size:0.7rem; text-align:center; opacity:0.5;">جاري التحميل...</p>`;
+    });
+
+    // 2. استخدام onSnapshot مرة واحدة فقط
     db.collection("lessons")
       .orderBy("createdAt", "desc")
       .onSnapshot(async snap => {
-
-        const sections = { 
-            cyber: 'cyberLessons', 
-            cloud: 'cloudLessons', 
-            programming: 'programmingLessons', 
-            English: 'EnglishLessons',
-            commSkills: 'commSkillsLessons' 
-        };
-
+        
+        // تفريغ القوائم مرة أخرى عند كل تحديث حقيقي للبيانات من السيرفر
         Object.values(sections).forEach(id => {
             const el = document.getElementById(id);
             if (el) el.innerHTML = "";
         });
 
-        for (const docItem of snap.docs) {
+        if (snap.empty) {
+            console.log("No lessons found.");
+            return;
+        }
 
+        // 3. بناء العناصر
+        for (const docItem of snap.docs) {
             const lesson = docItem.data();
 
+            // الفلتر الذكي حسب الصلاحيات
             if (lesson.category === "English" && !canAccessEnglish) continue;
             if (lesson.category === "commSkills" && !canAccessCommSkills) continue;
 
@@ -527,10 +552,8 @@ async function loadLessons() {
             const progressDoc = await progressRef.get();
             const isDone = progressDoc.exists;
 
-            // ✅ هذا كان ناقص
             const div = document.createElement('div');
             div.className = "lesson-box";
-
             div.innerHTML = `
                 <i class="fas ${isDone ? 'fa-check-circle' : 'fa-play-circle'}"
                    style="color:${isDone ? '#10b981' : 'var(--accent-gold)'}; margin-left:10px;"></i>
@@ -542,10 +565,13 @@ async function loadLessons() {
             div.onclick = () => playVideo(lesson.url, lesson.title);
 
             const targetId = sections[lesson.category];
-            if (targetId && document.getElementById(targetId)) {
-                document.getElementById(targetId).appendChild(div);
+            const targetEl = document.getElementById(targetId);
+            if (targetEl) {
+                targetEl.appendChild(div);
             }
         }
+    }, error => {
+        console.error("Error loading lessons:", error);
     });
 }
 
@@ -733,7 +759,7 @@ async function markLessonComplete(title) {
 
     document.getElementById("completeBtn").style.display = "none";
 
-    loadLessons();
+   // loadLessons();
 }
 
     const logoutAction = () => auth.signOut().then(() => window.location.href = "login.html");

@@ -100,11 +100,10 @@ input:checked + .slider {
 input:checked + .slider:before {
   transform: translateX(14px);
 }
+
     </style>
 </head>
-<body>
-
-    <div class="sidebar">
+<div class="sidebar">
         <h2>TechFlow Admin</h2>
         <div class="nav-link"><i class="fas fa-chart-line"></i> الإحصائيات العامة</div>
         <div class="nav-link"><i class="fas fa-video"></i> إدارة المحتوى</div>
@@ -138,12 +137,30 @@ input:checked + .slider:before {
                 <div><h4>الاختبارات</h4><span id="totalQuizzes">0</span></div>
             </div>
         </div>
+<div class="grid-2" style="margin-bottom: 25px;">
+    <div class="card" style="border-right: 5px solid var(--success);">
+        <h3><i class="fas fa-chart-pie"></i> كفاءة المنهج (Yield Rate)</h3>
+        <canvas id="progressChart" style="max-height: 250px;"></canvas>
+    </div>
+    <div class="card" style="border-right: 5px solid var(--accent);">
+        <h3><i class="fas fa-chart-bar"></i> توزيع الطالبات على المسارات</h3>
+        <canvas id="categoryChart" style="max-height: 250px;"></canvas>
+    </div>
+</div>
+        <div class="grid-2">
+             <div class="card" style="border-top: 4px solid var(--accent);">
+                <h3><i class="fas fa-bullhorn"></i> إرسال تنبيه عاجل لجميع الطالبات</h3>
+                <div style="display: flex; gap: 15px;">
+                    <input type="text" id="announcementText" placeholder="اكتبي رسالة تظهر فوراً في لوحة الطالبة...">
+                    <button id="sendAnnouncementBtn" style="width: 200px; background: var(--accent); color: var(--primary);">نشر الإعلان</button>
+                </div>
+            </div>
 
-        <div class="card" style="border-top: 4px solid var(--accent);">
-            <h3><i class="fas fa-bullhorn"></i> إرسال تنبيه عاجل لجميع الطالبات</h3>
-            <div style="display: flex; gap: 15px;">
-                <input type="text" id="announcementText" placeholder="اكتبي رسالة تظهر فوراً في لوحة الطالبة...">
-                <button id="sendAnnouncementBtn" style="width: 200px; background: var(--accent); color: var(--primary);">نشر الإعلان</button>
+            <div class="card" style="border-right: 4px solid #ef4444;">
+                <h3><i class="fas fa-shield-alt"></i> تنبيهات الأمان (IP Alerts)</h3>
+                <div id="securityAlertsList" style="max-height: 200px; overflow-y: auto;">
+                    <p style="text-align:center; color:#94a3b8; font-size:0.8rem;">النظام مؤمن بالكامل 🛡️</p>
+                </div>
             </div>
         </div>
 
@@ -157,66 +174,95 @@ input:checked + .slider:before {
                         <option value="cyber">🛡️ الأمن السيبراني</option>
                         <option value="cloud">☁️ الحوسبة السحابية</option>
                         <option value="programming">💻 لغات البرمجة</option>
-                        <option value="English"> اللغة الانجليزية </option>
+                        <option value="English">🔤 اللغة الإنجليزية</option>
+                        <option value="commSkills">🗣️ مهارات التواصل</option>
                     </select>
                     <input type="text" id="videoUrl" placeholder="رابط (YouTube / Drive)">
                     <button id="uploadContentBtn">نشر الدرس الآن</button>
                 </div>
                 <div>
-                    <div>
-    <p><b>📝 إضافة سؤال لاختبار (مصنف بالفصول):</b></p>
-    
-    <select id="quizCategory">
-        <option value="cyber">🛡️ الأمن السيبراني</option>
-        <option value="cloud">☁️ الحوسبة السحابية</option>
-        <option value="programming">💻 لغات البرمجة</option>
-         <option value="English">💻 اللغة الأنجليزية </option>
-    </select>
-
-    <input type="text" id="chapterName" placeholder="اسم الفصل (مثال: الفصل الأول: التشفير)">
-
-    <input type="text" id="questionText" placeholder="اكتبي نص السؤال هنا...">
-
-    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-        <input type="text" id="opt0" placeholder="خيار 1 (الرقم 0)">
-        <input type="text" id="opt1" placeholder="خيار 2 (الرقم 1)">
-        <input type="text" id="opt2" placeholder="خيار 3 (الرقم 2)">
-        <input type="text" id="opt3" placeholder="خيار 4 (الرقم 3)">
-    </div>
-
-    <label style="font-size: 0.8rem; color: #64748b; margin-top: 5px; display: block;">رقم الإجابة الصحيحة:</label>
-    <select id="correctIdx">
-        <option value="0">الخيار الأول (0)</option>
-        <option value="1">الخيار الثاني (1)</option>
-        <option value="2">الخيار الثالث (2)</option>
-        <option value="3">الخيار الرابع (3)</option>
-    </select>
-
-    <button id="saveQuestionBtn" style="background: var(--secondary);">حفظ السؤال في الفصل ✨</button>
-</div>
+                    <p><b>📝 إضافة سؤال لاختبار (مصنف بالفصول):</b></p>
+                    <select id="quizCategory">
+                        <option value="cyber">🛡️ الأمن السيبراني</option>
+                        <option value="cloud">☁️ الحوسبة السحابية</option>
+                        <option value="programming">💻 لغات البرمجة</option>
+                        <option value="English">🔤 اللغة الإنجليزية</option>
+                        <option value="commSkills">🗣️ مهارات التواصل</option>
+                    </select>
+                    <input type="text" id="chapterName" placeholder="اسم الفصل (مثال: الفصل الأول)">
+                    <input type="text" id="questionText" placeholder="اكتبي نص السؤال هنا...">
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                        <input type="text" id="opt0" placeholder="خيار 0">
+                        <input type="text" id="opt1" placeholder="خيار 1">
+                        <input type="text" id="opt2" placeholder="خيار 2">
+                        <input type="text" id="opt3" placeholder="خيار 3">
+                    </div>
+                    <label style="font-size: 0.8rem; color: #64748b; margin-top: 5px; display: block;">رقم الإجابة الصحيحة:</label>
+                    <select id="correctIdx">
+                        <option value="0">0</option>
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                    </select>
+                    <button id="saveQuestionBtn" style="background: var(--secondary);">حفظ السؤال ✨</button>
+                </div>
+            </div>
         </div>
 
         <div class="grid-2">
             <div class="card">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <h3><i class="fas fa-users-cog"></i> مراقبة الطلاب</h3>
-                    <input type="text" id="searchStudent" placeholder="🔍 بحث عن طالبة..." style="width: 200px; margin: 0; padding: 8px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h3><i class="fas fa-users-cog"></i> إدارة وصلاحيات الطالبات</h3>
+                    <input type="text" id="searchStudent" placeholder="🔍 بحث سريع..." style="width: 200px; padding: 8px; border-radius: 8px; border: 1px solid #ddd;">
                 </div>
                 <div style="overflow-x: auto;">
                     <table>
                         <thead>
                             <tr>
-                                <th>الطالب</th>
-                                <th>البريد</th>
-                                <th>الحالة</th>
-                                <th>آخر ظهور</th>
+                                <th>الطالبة</th>
+                                <th>البريد والصلاحيات</th>
+                                <th>إدارة الجهاز</th>
+                                <th>التقدم</th>
+                                <th>آخر نشاط</th>
                             </tr>
                         </thead>
                         <tbody id="studentData"></tbody>
                     </table>
                 </div>
             </div>
-
+<div class="card" style="border-right: 5px solid var(--primary);">
+    <h3><i class="fas fa-key"></i> سجل تغيير كلمات المرور (Audit Log)</h3>
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+    <h3><i class="fas fa-key"></i> سجل تغيير كلمات المرور</h3>
+    <button onclick="exportPasswordsToCSV()" style="width: auto; padding: 8px 15px; background: var(--success); font-size: 0.8rem;">
+        <i class="fas fa-file-export"></i> تصدير التقرير (CSV)
+    </button>
+</div>
+<div class="stat-card" style="border-right: 5px solid var(--primary);">
+    <i class="fas fa-key"></i>
+    <div>
+        <h4>تحديثات كلمة المرور</h4>
+        <span id="passChangeCount">0</span>
+        <small id="passChange24h" style="display:block; font-size:0.7rem; color:var(--success);">+0 آخر 24 ساعة</small>
+    </div>
+</div>
+    <div style="overflow-x: auto;">
+        <table>
+            
+            <thead>
+                <tr>
+                    <th>اسم الطالبة</th>
+                    <th>البريد الإلكتروني</th>
+                    <th>التاريخ والوقت</th>
+                    <th>عنوان IP</th>
+                    <th>الحالة</th>
+                </tr>
+            </thead>
+            <tbody id="passwordChangeLog">
+                </tbody>
+        </table>
+    </div>
+</div>
             <div class="card">
                 <h3><i class="fas fa-bolt"></i> آخر النشاطات</h3>
                 <div id="activityLog" style="max-height: 300px; overflow-y: auto;">
@@ -237,10 +283,10 @@ input:checked + .slider:before {
                     <table>
                         <thead>
                             <tr>
-                                <th>الطالبة</th>
-                                <th>التعليق</th>
-                                <th>الحالة</th>
-                                <th>إجراء</th>
+                               <th>الطالبة</th>
+<th>البريد والصلاحيات</th>
+<th>إدارة الأجهزة</th> <th>التقدم</th>
+<th>آخر نشاط</th>
                             </tr>
                         </thead>
                         <tbody id="commentsData"></tbody>
@@ -249,9 +295,14 @@ input:checked + .slider:before {
             </div>
         </div>
     </div>
+</body>
 <script type="module">
+    import { getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, doc, deleteDoc, updateDoc, where, limit, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { 
+        getFirestore, collection, addDoc, onSnapshot, query, orderBy, 
+        doc, deleteDoc, updateDoc, where, serverTimestamp, deleteField 
+    } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
     import { getAuth, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
     const firebaseConfig = {
@@ -264,207 +315,624 @@ input:checked + .slider:before {
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
     const auth = getAuth(app);
+// تعريف صوت الإشعارات (صنت ناعم واحترافي)
 
-    // --- 1. إدارة بيانات الطلاب ومراقبة الحالة وصلاحية الإنجليزي ---
+// صوت الإشعارات
+    const notifSound = new Audio('https://assets.mixkit.co/active_storage/sfx/2358/2358-preview.mp3');
+    const playNotifSound = () => notifSound.play().catch(() => {});
     let allStudents = [];
+    let progressChartInstance = null;
+let categoryChartInstance = null;
 
-    function renderStudents(students) {
-        const tbody = document.getElementById('studentData');
-        const searchTerm = document.getElementById('searchStudent').value.toLowerCase();
-        tbody.innerHTML = "";
+async function updateQualityCharts(students) {
+    try {
+        const lessonsSnap = await getDocs(collection(db, "lessons"));
+        const totalLessons = lessonsSnap.size;
+        
+        let totalCompleted = 0;
+        for (const s of students) {
+            const progressSnap = await getDocs(collection(db, "studentProgress", s.id, "lessons"));
+            totalCompleted += progressSnap.size;
+        }
 
-        students.forEach((data) => {
-            if (searchTerm && !data.first_name?.toLowerCase().includes(searchTerm) && !data.email?.toLowerCase().includes(searchTerm)) {
-                return;
-            }
+        // حساب الـ Yield (معدل الإنجاز الكلي)
+        const yieldRate = (totalLessons > 0 && students.length > 0) 
+            ? Math.round((totalCompleted / (totalLessons * students.length)) * 100) 
+            : 0;
+// وضعنا هذا الكود في البداية لضمان الأولوية
+    onSnapshot(query(collection(db, "adminNotifications"), 
+        where("type", "==", "PASSWORD_CHANGE"), 
+        orderBy("time", "desc")), (snapshot) => {
+        
+        const logTable = document.getElementById('passwordChangeLog');
+        const totalCountEl = document.getElementById('passChangeCount');
+        const dailyCountEl = document.getElementById('passChange24h');
+        
+        logTable.innerHTML = ""; 
+        let dailyCount = 0;
+        const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
-            let isOnline = false;
-            let timeString = "لم تدخل بعد";
+        totalCountEl.innerText = snapshot.size;
 
-            if (data.lastSeen) {
-                const lastSeenDate = data.lastSeen.toDate();
-                const now = new Date();
-                const diffInSeconds = Math.floor((now - lastSeenDate) / 1000);
-                if (diffInSeconds < 60) isOnline = true;
-                timeString = lastSeenDate.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
-            }
+        snapshot.forEach((doc, index) => {
+            const data = doc.data();
+            const timeDate = data.time ? data.time.toDate() : null;
+            const timeFormatted = timeDate ? timeDate.toLocaleString('ar-SA') : "قيد المعالجة";
+            
+            if (timeDate && timeDate > oneDayAgo) dailyCount++;
 
-            // تم إضافة حقل التحكم في قسم الإنجليزي هنا
-            tbody.innerHTML += `
-                <tr>
-                    <td>
-                        <div style="display: flex; align-items: center; gap: 8px;">
-                            <div style="width: 10px; height: 10px; border-radius: 50%; background: ${isOnline ? 'var(--success)' : '#cbd5e1'}; box-shadow: ${isOnline ? '0 0 8px var(--success)' : 'none'}"></div>
-                            <b>${data.first_name || 'طالبة جديدة'}</b>
-                        </div>
-                    </td>
-                    <td>
-                        <div style="display: flex; flex-direction: column; gap: 4px;">
-                            <span style="font-size: 0.7rem; color: #64748b;">${data.email}</span>
-                            <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
-                                <input type="checkbox" ${data.canAccessEnglish ? 'checked' : ''} 
-                                       onchange="toggleEnglishAccess('${data.id}', this.checked)">
-                                <span style="font-size: 0.75rem; color: var(--accent);">فتح قسم الإنجليزي</span>
-                            </label>
-                        </div>
-                    </td>
-                    <td>
-                        <span class="status-tag ${isOnline ? 'online' : 'offline'}">
-                            ${isOnline ? '● متصلة' : 'غير متصلة'}
-                        </span>
-                    </td>
-                    <td style="font-size: 0.75rem; color: #64748b;">
-                        ${isOnline ? '<span style="color:var(--success)">نشطة</span>' : timeString}
-                    </td>
-                </tr>`;
+            // تصميم الصف (أخضر خفيف للأحدث)
+            const rowStyle = index === 0 ? 'style="background-color: rgba(16, 185, 129, 0.05);"' : '';
+            
+            logTable.innerHTML += `
+                <tr ${rowStyle}>
+                    <td><b>${data.studentName}</b></td>
+                    <td>${data.email || '—'}</td>
+                    <td>${timeFormatted}</td>
+                    <td><small>${data.detectedIP || '—'}</small></td>
+                    <td><span class="status-tag online">تم التحديث ✅</span></td>
+                </tr>
+            `;
         });
-    }
-
-    
-
-    onSnapshot(collection(db, "students"), (snapshot) => {
-        allStudents = [];
-        snapshot.forEach(doc => allStudents.push({ id: doc.id, ...doc.data() }));
-        renderStudents(allStudents);
-        document.getElementById('totalStudents').innerText = snapshot.size;
+        dailyCountEl.innerText = `+${dailyCount} آخر 24 ساعة`;
+        
+        if (!snapshot.metadata.hasPendingWrites && snapshot.docChanges().some(c => c.type === "added")) {
+            playNotifSound();
+        }
     });
 
-    setInterval(() => renderStudents(allStudents), 30000);
-    document.getElementById('searchStudent').oninput = () => renderStudents(allStudents);
+    // --- 2. مراقبة التنبيهات الأمنية والنشاط العام ---
+    onSnapshot(query(collection(db, "adminNotifications"), orderBy("time", "desc")), (snapshot) => {
+        const log = document.getElementById('activityLog');
+        const alerts = document.getElementById('securityAlertsList');
+        log.innerHTML = ""; 
+        alerts.innerHTML = "";
 
-    // --- 2. إدارة الاختبارات (Quizzes) ---
-    document.getElementById('saveQuestionBtn').onclick = async () => {
-        const category = document.getElementById('quizCategory').value;
-        const chapter = document.getElementById('chapterName').value;
-        const question = document.getElementById('questionText').value;
-        const options = [
-            document.getElementById('opt0').value,
-            document.getElementById('opt1').value,
-            document.getElementById('opt2').value,
-            document.getElementById('opt3').value
-        ];
-        const correct = document.getElementById('correctIdx').value;
+        snapshot.forEach(d => {
+            const n = d.data();
+            const time = n.time ? n.time.toDate().toLocaleTimeString('ar-EG') : "الآن";
+            
+            if (n.type === "SECURITY_ALERT") {
+                alerts.innerHTML += `
+                    <div style="background:rgba(239,68,68,0.05); padding:8px; border-radius:8px; margin-bottom:8px; border-right:3px solid var(--danger);">
+                        <b>${n.studentName}</b> | محاولة دخول غريبة
+                    </div>`;
+            }
+            // استثناء تغيير الباسورد من السجل العام لعدم التكرار
+            if (n.type !== "PASSWORD_CHANGE") {
+                log.innerHTML += `<div class="activity-item"><i class="fas fa-bolt"></i> ${n.studentName}: ${n.type}</div>`;
+            }
+        });
+    });
 
-        if(!chapter || !question || options.some(opt => opt === "")) {
-            alert("هدولتي، تأكدي من تعبئة كل الخيارات وكتابة اسم الفصل 🌸");
-            return;
-        }
-
-        try {
-            await addDoc(collection(db, "quizzes"), {
-                category, chapter, question, options,
-                correct: parseInt(correct),
-                createdAt: serverTimestamp()
-            });
-            alert(`تمت إضافة السؤال بنجاح في ${chapter} 🚀`);
-            document.getElementById('questionText').value = "";
-            for(let i=0; i<4; i++) document.getElementById(`opt${i}`).value = "";
-        } catch (error) {
-            alert("حدث خطأ أثناء الحفظ!");
-        }
+    // --- 3. بقية الدوال (Export / Delete) ---
+    window.exportPasswordsToCSV = () => {
+        const table = document.getElementById('passwordChangeLog');
+        let csvContent = "data:text/csv;charset=utf-8,\uFEFFاسم الطالبة,البريد,الوقت,IP\n";
+        table.querySelectorAll("tr").forEach(row => {
+            const rowData = Array.from(row.querySelectorAll("td")).map(col => `"${col.innerText}"`).join(",");
+            csvContent += rowData + "\n";
+        });
+        const link = document.createElement("a");
+        link.href = encodeURI(csvContent);
+        link.download = "سجل_كلمات_المرور.csv";
+        link.click();
     };
 
-    // --- 3. إدارة الدروس (Lessons) ---
+    window.clearPasswordLogs = async () => {
+        if (confirm("حذف السجل؟")) {
+            const q = query(collection(db, "adminNotifications"), where("type", "==", "PASSWORD_CHANGE"));
+            const snap = await getDocs(q);
+            snap.forEach(async (d) => await deleteDoc(d.ref));
+            alert("تم التنظيف ✨");
+        }
+    };
+        // 1. رسم بياني دائري (Yield Gauge)
+        const ctx1 = document.getElementById('progressChart').getContext('2d');
+        if(progressChartInstance) progressChartInstance.destroy();
+        progressChartInstance = new Chart(ctx1, {
+            type: 'doughnut',
+            data: {
+                labels: ['إنجاز مكتمل', 'متبقي'],
+                datasets: [{
+                    data: [yieldRate, 100 - yieldRate],
+                    backgroundColor: ['#10b981', '#f1f5f9'],
+                    borderWidth: 0
+                }]
+            },
+            options: { cutout: '80%', plugins: { legend: { position: 'bottom' } } }
+        });
+
+        // 2. تحليل توزيع المسارات والنسب المئوية
+        const totalStudents = students.length;
+        const englishCount = students.filter(s => s.canAccessEnglish).length;
+        const commsCount = students.filter(s => s.canAccessCommSkills).length;
+
+        const englishPercent = totalStudents > 0 ? Math.round((englishCount / totalStudents) * 100) : 0;
+        const commsPercent = totalStudents > 0 ? Math.round((commsCount / totalStudents) * 100) : 0;
+
+        const ctx2 = document.getElementById('categoryChart').getContext('2d');
+        if(categoryChartInstance) categoryChartInstance.destroy();
+        categoryChartInstance = new Chart(ctx2, {
+            type: 'bar',
+            data: {
+                labels: ['الباقة الأساسية 🛡️', 'مسار الإنجليزي 🔤', 'مهارات التواصل 🗣️'],
+                datasets: [{
+                    label: 'عدد الطالبات',
+                    data: [totalStudents, englishCount, commsCount],
+                    backgroundColor: ['#1e293b', '#fbbf24', '#334155'],
+                    borderRadius: 8
+                }]
+            },
+            options: {
+                scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.raw || 0;
+                                if (context.dataIndex === 1) return `${label} طالبة (${englishPercent}%)`;
+                                if (context.dataIndex === 2) return `${label} طالبة (${commsPercent}%)`;
+                                return `${label} طالبة (100%)`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    } catch (error) {
+        console.error("خطأ في تحديث الرسوم البيانية هدولتي: ", error);
+    }
+}
+    
+
+
+
+async function renderStudents(students) {
+    const tbody = document.getElementById('studentData');
+    const searchTerm = document.getElementById('searchStudent').value.toLowerCase();
+    tbody.innerHTML = "";
+
+    // نجيب عدد الدروس الكلي
+    const lessonsSnap = await getDocs(collection(db, "lessons"));
+    const totalLessonsCount = lessonsSnap.size;
+
+    for (const data of students) {
+        if (
+            searchTerm &&
+            !data.first_name?.toLowerCase().includes(searchTerm) &&
+            !data.email?.toLowerCase().includes(searchTerm)
+        ) continue;
+
+        // 🔥 عدد الدروس المكتملة
+        const progressSnap = await getDocs(
+            collection(db, "studentProgress", data.id, "lessons")
+        );
+
+        const completed = progressSnap.size;
+        const percent = totalLessonsCount > 0
+            ? Math.round((completed / totalLessonsCount) * 100)
+            : 0;
+
+        // 🔥 منطق الأجهزة (IPs) المطور
+        let allowedIPs = data.registeredIPs || [];
+        // التوافق مع النظام القديم
+        if (data.registeredIP && !allowedIPs.includes(data.registeredIP)) {
+            allowedIPs.push(data.registeredIP);
+        }
+        const ipCount = allowedIPs.length;
+
+        // 🔥 تنسيق آخر ظهور
+        let lastSeenFormatted = "—";
+        if (data.lastSeen) {
+            const dateObj = data.lastSeen.toDate();
+            lastSeenFormatted = dateObj.toLocaleString('ar-SA', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        tbody.innerHTML += `
+            <tr>
+                <td><b>${data.first_name || 'طالبة'}</b></td>
+
+                <td>
+                    <div style="font-size:0.75rem; color:#64748b;">${data.email}</div>
+                    <label>
+                        <input type="checkbox" ${data.canAccessEnglish ? 'checked' : ''} 
+                        onchange="window.toggleAccess('${data.id}', 'canAccessEnglish', this.checked)">
+                        🔤 إنجليزي
+                    </label>
+                    <label style="margin-right:10px;">
+                        <input type="checkbox" ${data.canAccessCommSkills ? 'checked' : ''} 
+                        onchange="window.toggleAccess('${data.id}', 'canAccessCommSkills', this.checked)">
+                        🗣️ تواصل
+                    </label>
+                </td>
+
+                <td>
+                    <div style="margin-bottom: 5px;">
+                        <span class="status-tag ${ipCount >= 2 ? 'offline' : 'online'}">
+                            ${ipCount} / 2 أجهزة
+                        </span>
+                    </div>
+                    <button onclick="window.resetStudentDevices('${data.id}', '${data.first_name || 'الطالبة'}')" 
+                            style="padding: 5px 10px; font-size: 0.7rem; background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; border-radius: 5px; cursor: pointer; width: auto;">
+                        <i class="fas fa-undo"></i> إعادة ضبط
+                    </button>
+                </td>
+
+                <td>
+                    <div style="background:#e2e8f0; height:8px; border-radius:10px; overflow:hidden;">
+                        <div style="width:${percent}%; background:var(--success); height:100%;"></div>
+                    </div>
+                    <small>${completed} / ${totalLessonsCount} (${percent}%)</small>
+                </td>
+
+                <td>
+                    <small style="color:#64748b;">
+                        ${lastSeenFormatted}
+                    </small>
+                </td>
+            </tr>
+        `;
+        updateQualityCharts(students); // استدعاء الرسوم بعد تحديث بيانات الجدول
+    }
+}
+
+    // --- 2. إدارة الدروس (التحكم بالدروس) ---
     onSnapshot(query(collection(db, "lessons"), orderBy("createdAt", "desc")), (snapshot) => {
         const list = document.getElementById('lessonsList');
-        list.innerHTML = "";
         document.getElementById('totalLessons').innerText = snapshot.size;
-        snapshot.forEach((lessonDoc) => {
-            const lesson = lessonDoc.data();
+        list.innerHTML = "";
+        snapshot.forEach((lDoc) => {
+            const lesson = lDoc.data();
             const div = document.createElement('div');
-            div.style.cssText = "display:flex; justify-content:space-between; align-items:center; padding:10px; border-bottom:1px solid #f1f5f9;";
-            
-            // تحسين عرض اسم القسم
-            const catDisplay = lesson.category === 'English' ? 'إنجليزي' : lesson.category;
-            
-            div.innerHTML = `<div><span style="color:var(--accent);">[${catDisplay}]</span> <b>${lesson.title}</b></div>
-                <button onclick="deleteLesson('${lessonDoc.id}')" class="delete-btn"><i class="fas fa-trash-alt"></i></button>`;
+            div.className = "activity-item";
+            div.innerHTML = `
+                <div style="flex-grow:1;"><b>[${lesson.category}]</b> ${lesson.title}</div>
+                <button onclick="window.deleteLesson('${lDoc.id}')" class="delete-btn"><i class="fas fa-trash-alt"></i></button>
+            `;
             list.appendChild(div);
         });
     });
 
-    window.deleteLesson = async (id) => {
-        if (confirm("هدولتي، متأكدة من الحذف؟")) await deleteDoc(doc(db, "lessons", id));
-    };
-
-    // --- 4. إدارة التعليقات والإشعارات ---
-    let lastPendingCount = 0;
+    // --- 3. إدارة التعليقات والتقييمات ---
+  // تعديل دالة مراقبة التعليقات
+// --- 3. إدارة التعليقات والتقييمات (المحدثة بالصوت) ---
     onSnapshot(query(collection(db, "comments"), orderBy("createdAt", "desc")), (snapshot) => {
         const tbody = document.getElementById('commentsData');
         tbody.innerHTML = "";
         let pending = 0;
+        
+        // تشغيل الصوت عند إضافة تعليق جديد فعلياً
+        if (!snapshot.metadata.hasPendingWrites && snapshot.docChanges().some(change => change.type === "added")) {
+            playNotifSound();
+        }
+
         snapshot.forEach(cDoc => {
             const c = cDoc.data();
             if(c.status === 'pending') pending++;
             tbody.innerHTML += `
                 <tr>
                     <td>${c.studentName}</td>
-                    <td style="font-size:0.75rem;">${c.comment}</td>
+                    <td>${c.comment}</td>
                     <td><span class="status-tag ${c.status === 'approved' ? 'online' : 'offline'}">${c.status === 'approved' ? 'معتمد' : 'معلق'}</span></td>
                     <td>
-                        ${c.status === 'pending' ? `<button onclick="approveComment('${cDoc.id}')" style="padding:4px; font-size:0.7rem; background:var(--success); color:white; border:none; border-radius:4px; cursor:pointer;">اعتماد</button>` : ''}
-                        <button onclick="deleteComment('${cDoc.id}')" class="delete-btn"><i class="fas fa-trash-alt"></i></button>
+                        ${c.status === 'pending' ? `<button onclick="window.approveComment('${cDoc.id}')" style="background:var(--success); color:white; border:none; padding:3px 8px; border-radius:4px; cursor:pointer;">اعتماد</button>` : ''}
+                        <button onclick="window.deleteComment('${cDoc.id}')" class="delete-btn"><i class="fas fa-trash-alt"></i></button>
                     </td>
                 </tr>`;
         });
-        
         const badge = document.getElementById('adminNotifBadge');
-        if (pending > 0) {
-            badge.innerText = pending; badge.style.display = 'block';
-            if (pending > lastPendingCount) new Audio('https://assets.mixkit.co/active_storage/sfx/2358/2358-preview.mp3').play().catch(() => {});
-        } else { badge.style.display = 'none'; }
-        lastPendingCount = pending;
+        if (pending > 0) { badge.innerText = pending; badge.style.display = 'block'; } else { badge.style.display = 'none'; }
     });
 
-    window.approveComment = async (id) => await updateDoc(doc(db, "comments", id), { status: "approved" });
-    window.deleteComment = async (id) => { if(confirm("حذف؟")) await deleteDoc(doc(db, "comments", id)); };
-
-    // --- 5. العمليات العامة (تنبيهات، رفع دروس، خروج) ---
-    document.getElementById('sendAnnouncementBtn').onclick = async () => {
-        const msg = document.getElementById('announcementText').value;
-        if(msg) {
-            await addDoc(collection(db, "announcements"), { message: msg, createdAt: serverTimestamp() });
-            alert("تم إرسال التنبيه يا هدولتي! 🚀");
-            document.getElementById('announcementText').value = "";
-        }
-    };
-
-    document.getElementById('uploadContentBtn').onclick = async () => {
-        const title = document.getElementById('videoTitle').value;
-        const category = document.getElementById('videoCategory').value;
-        const url = document.getElementById('videoUrl').value;
-        if (title && url) {
-            await addDoc(collection(db, "lessons"), { title, category, url, createdAt: serverTimestamp() });
-            alert("تم النشر بنجاح! ✅");
-            document.getElementById('videoTitle').value = ""; 
-            document.getElementById('videoUrl').value = "";
-        }
-    };
- // --- دالة تحديث صلاحية الوصول للإنجليزي (النسخة المصححة) ---
-window.toggleEnglishAccess = async (studentId, isAllowed) => {
-    try {
-        // الوصول للمستند مباشرة باستخدام الـ ID لأنه أسرع وأدق
-        const studentRef = doc(db, "students", studentId);
+    // --- 4. آخر النشاطات وتنبيهات الأمان (المحدثة بالصوت) ---
+    onSnapshot(query(collection(db, "adminNotifications"), orderBy("time", "desc")), (snapshot) => {
+        const log = document.getElementById('activityLog');
+        const alerts = document.getElementById('securityAlertsList');
         
-        await updateDoc(studentRef, { 
-            canAccessEnglish: isAllowed,
-            englishUnlockedAt: isAllowed ? serverTimestamp() : null // اختياري: لتسجيل وقت الفتح
+        // تشغيل الصوت عند وصول بلاغ أمني جديد
+        if (!snapshot.metadata.hasPendingWrites && snapshot.docChanges().some(change => change.type === "added")) {
+            playNotifSound();
+        }
+
+        log.innerHTML = ""; 
+        alerts.innerHTML = snapshot.empty ? '<p style="text-align:center; font-size:0.8rem;">النظام مؤمن 🛡️</p>' : "";
+
+        snapshot.forEach(d => {
+            const n = d.data();
+            const time = n.time ? n.time.toDate().toLocaleTimeString('ar-EG') : "الآن";
+            
+            if (n.type === "SECURITY_ALERT") {
+                alerts.innerHTML += `
+                    <div style="background:rgba(239, 68, 68, 0.05); padding:8px; border-radius:8px; margin-bottom:8px; border-right:3px solid var(--danger);">
+                        <small style="color:var(--danger); font-weight:bold;">⚠️ محاولة دخول غريبة</small><br>
+                        <b>${n.studentName}</b> | <small>${time}</small>
+                    </div>`;
+            }
+            log.innerHTML += `<div class="activity-item"><i class="fas fa-bolt" style="color:var(--accent);"></i> ${n.studentName}: ${n.type} في ${time}</div>`;
         });
+    });
 
-        console.log(`تم ${isAllowed ? 'تفعيل' : 'إلغاء'} صلاحية الإنجليزي بنجاح 🚀`);
+    // --- 4. آخر النشاطات وتنبيهات الأمان ---
+    onSnapshot(query(collection(db, "adminNotifications"), orderBy("time", "desc")), (snapshot) => {
+        const log = document.getElementById('activityLog');
+        const alerts = document.getElementById('securityAlertsList');
+        log.innerHTML = ""; 
+        alerts.innerHTML = snapshot.empty ? '<p style="text-align:center; font-size:0.8rem;">النظام مؤمن 🛡️</p>' : "";
+
+        snapshot.forEach(d => {
+            const n = d.data();
+            const time = n.time ? n.time.toDate().toLocaleTimeString('ar-EG') : "الآن";
+            
+            // إضافة التنبيهات الأمنية لصندوق الأمان
+            if (n.type === "SECURITY_ALERT") {
+                alerts.innerHTML += `
+                    <div style="background:rgba(239, 68, 68, 0.05); padding:8px; border-radius:8px; margin-bottom:8px; border-right:3px solid var(--danger);">
+                        <small style="color:var(--danger); font-weight:bold;">⚠️ محاولة دخول غريبة</small><br>
+                        <b>${n.studentName}</b> | <small>${time}</small>
+                    </div>`;
+            }
+
+            // إضافة كل النشاطات لسجل النشاطات العام
+            log.innerHTML += `<div class="activity-item"><i class="fas fa-bolt" style="color:var(--accent);"></i> ${n.studentName}: ${n.type} في ${time}</div>`;
+        });
+    });
+// --- تحديث مراقبة سجل تغيير كلمات المرور ---
+
+
+// --- 9. دالة تصدير السجل إلى ملف Excel/CSV ---
+// --- تحديث مراقبة سجل تغيير كلمات المرور مع التنسيق الملون ---
+onSnapshot(query(collection(db, "adminNotifications"), 
+    where("type", "==", "PASSWORD_CHANGE"), 
+    orderBy("time", "desc")), (snapshot) => {
+    
+    const logTable = document.getElementById('passwordChangeLog');
+    logTable.innerHTML = ""; 
+    
+    snapshot.forEach((doc, index) => {
+        const data = doc.data();
+        const timeFormatted = data.time ? data.time.toDate().toLocaleString('ar-SA') : "قيد المعالجة";
         
-        // تنبيه بسيط للأدمن فقط
-        if(isAllowed) {
-             alert("تم فتح القسم بنجاح، ستظهر الرسالة الترحيبية للطالبة عند دخولها ✨");
-        }
-    } catch (error) {
-        console.error("Error updating access:", error);
-        alert("حدث خطأ أثناء التحديث يا هدولتي 💔");
+        // تمييز أول صف (الأحدث) بلون مختلف لجذب الانتباه (Visual Management)
+        const rowStyle = index === 0 ? 'style="background-color: rgba(16, 185, 129, 0.1); animation: highlight 2s;"' : '';
+        
+        logTable.innerHTML += `
+            <tr ${rowStyle}>
+                <td><b>${data.studentName}</b></td>
+                <td>${data.email || '—'}</td>
+                <td>${timeFormatted}</td>
+                <td><small>${data.detectedIP || '—'}</small></td>
+                <td><span class="status-tag online">تم التحديث ✅</span></td>
+            </tr>
+        `;
+    });
+});
+
+// دالة حذف السجل بالكامل (تقليل هدر البيانات)
+window.clearPasswordLogs = async () => {
+    if (confirm("هدولتي، هل تودين حذف جميع سجلات تغيير كلمات المرور؟ (يفضل التصدير أولاً) 🛡️")) {
+        const q = query(collection(db, "adminNotifications"), where("type", "==", "PASSWORD_CHANGE"));
+        const snap = await getDocs(q);
+        const batch = db.batch(); // استخدام الـ batch للحذف الجماعي بكفاءة
+        
+        snap.forEach(doc => {
+            batch.delete(doc.ref);
+        });
+        
+        await batch.commit();
+        alert("تم تنظيف السجل بنجاح يا هدولتي ✨");
     }
 };
+    // --- ربط الوظائف بـ Window (مهم جداً لعمل الأزرار) ---
+    window.toggleAccess = async (id, field, val) => await updateDoc(doc(db, "students", id), { [field]: val });
+    window.resetStudentIP = async (id, name) => { if(confirm(`إعادة ضبط جهاز ${name}؟`)) await updateDoc(doc(db, "students", id), { registeredIP: deleteField() }); };
+    window.approveComment = async (id) => await updateDoc(doc(db, "comments", id), { status: "approved" });
+    window.deleteComment = async (id) => { if(confirm("حذف التعليق؟")) await deleteDoc(doc(db, "comments", id)); };
+    window.deleteLesson = async (id) => { if(confirm("حذف الدرس؟")) await deleteDoc(doc(db, "lessons", id)); };
+// 🔥 دالة إعادة ضبط أجهزة الطالبة (Reset)
+    window.resetStudentDevices = async (id, name) => {
+        // رسالة تأكيد احترافية لهدولتي
+        if (confirm(`هدولتي، هل أنتِ متأكدة من حذف الأجهزة المسجلة للطالبة ${name}؟ هذا سيسمح لها بالدخول من أجهزة جديدة.`)) {
+            try {
+                const studentRef = doc(db, "students", id);
+                
+                // حذف الحقول الخاصة بالـ IPs من قاعدة البيانات
+                await updateDoc(studentRef, {
+                    registeredIP: deleteField(),
+                    registeredIPs: deleteField()
+                });
+
+                // تسجيل هذه الحركة في سجل النشاطات (Activity Log) لتوثيق الإجراء
+                await addDoc(collection(db, "adminNotifications"), {
+                    studentName: "الإدارة (هديل)",
+                    type: `إعادة ضبط أجهزة الطالبة: ${name}`,
+                    time: serverTimestamp()
+                });
+
+                alert(`تمت إعادة ضبط أجهزة ${name} بنجاح ✨`);
+            } catch (error) {
+                console.error("خطأ في إعادة الضبط:", error);
+                alert("حدث خطأ أثناء محاولة إعادة الضبط ❌");
+            }
+        }
+    };
+    // --- الإحصائيات العامة ---
+    onSnapshot(collection(db, "students"), snap => {
+        allStudents = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        renderStudents(allStudents);
+        document.getElementById('totalStudents').innerText = snap.size;
+    });
 
     onSnapshot(collection(db, "quizzes"), snap => document.getElementById('totalQuizzes').innerText = snap.size);
+
     document.getElementById('logoutBtn').onclick = () => signOut(auth).then(() => window.location.href = "login.html");
+    document.getElementById('searchStudent').oninput = () => renderStudents(allStudents);
+// --- 5. منطق إرسال التنبيه العاجل لجميع الطالبات ---
+    document.getElementById('sendAnnouncementBtn').onclick = async () => {
+        const announcementInput = document.getElementById('announcementText');
+        const message = announcementInput.value.trim();
+
+        if (!message) {
+            alert("هدولتي، اكتبي نص التنبيه أولاً 🌸");
+            return;
+        }
+
+        try {
+            // إضافة التنبيه لمجموعة announcements ليقرأها كود الطالبة
+            await addDoc(collection(db, "announcements"), {
+                message: message,
+                type: "URGENT_ALERT",
+                createdAt: serverTimestamp()
+            });
+
+            // إضافة النشاط لسجل النشاطات العام ليظهر عندك في اللوحة
+            await addDoc(collection(db, "adminNotifications"), {
+                studentName: "الإدارة",
+                type: "إرسال تنبيه عام",
+                time: serverTimestamp()
+            });
+
+            alert("تم نشر التنبيه بنجاح يا هدولتي! 🚀");
+            announcementInput.value = ""; // تفريغ الحقل بعد الإرسال
+        } catch (error) {
+            console.error("Error sending announcement:", error);
+            alert("حدث خطأ أثناء الإرسال ❌");
+        }
+    };
+    // --- 6. تفعيل زر إضافة درس جديد ---
+    document.getElementById('uploadContentBtn').onclick = async () => {
+        const title = document.getElementById('videoTitle').value.trim();
+        const category = document.getElementById('videoCategory').value;
+        const url = document.getElementById('videoUrl').value.trim();
+
+        if (!title || !url) {
+            alert("هدولتي، تأكدي من كتابة العنوان ورابط الفيديو 🌸");
+            return;
+        }
+
+        try {
+            // إضافة الدرس لمجموعة lessons
+            await addDoc(collection(db, "lessons"), {
+                title: title,
+                category: category,
+                url: url,
+                createdAt: serverTimestamp()
+            });
+
+            // تسجيل النشاط في السجل العام
+            await addDoc(collection(db, "adminNotifications"), {
+                studentName: "الإدارة",
+                type: `إضافة درس جديد: ${title}`,
+                time: serverTimestamp()
+            });
+
+            alert(`تم نشر درس "${title}" بنجاح! 🚀`);
+            
+            // تفريغ الحقول بعد النجاح
+            document.getElementById('videoTitle').value = "";
+            document.getElementById('videoUrl').value = "";
+            
+        } catch (error) {
+            console.error("Error uploading lesson:", error);
+            alert("حدث خطأ أثناء رفع الدرس ❌");
+        }
+    };
+    // --- 7. تفعيل زر حفظ سؤال الاختبار (مصنف بالفصول) ---
+    document.getElementById('saveQuestionBtn').onclick = async () => {
+        const category = document.getElementById('quizCategory').value;
+        const chapter = document.getElementById('chapterName').value.trim();
+        const question = document.getElementById('questionText').value.trim();
+        const options = [
+            document.getElementById('opt0').value.trim(),
+            document.getElementById('opt1').value.trim(),
+            document.getElementById('opt2').value.trim(),
+            document.getElementById('opt3').value.trim()
+        ];
+        const correct = parseInt(document.getElementById('correctIdx').value);
+
+        // التحقق من تعبئة البيانات
+        if (!chapter || !question || options.some(opt => opt === "")) {
+            alert("هدولتي، تأكدي من كتابة اسم الفصل والسؤال وجميع الخيارات 🌸");
+            return;
+        }
+
+        try {
+            // إضافة السؤال لمجموعة quizzes
+            await addDoc(collection(db, "quizzes"), {
+                category: category,
+                chapter: chapter,
+                question: question,
+                options: options,
+                correct: correct,
+                createdAt: serverTimestamp()
+            });
+
+            // تسجيل النشاط
+            await addDoc(collection(db, "adminNotifications"), {
+                studentName: "الإدارة",
+                type: `إضافة سؤال جديد في: ${chapter}`,
+                time: serverTimestamp()
+            });
+
+            alert(`تم حفظ السؤال بنجاح في فصل "${chapter}" ✨`);
+            
+            // تفريغ الحقول للاستعداد لسؤال جديد
+            document.getElementById('questionText').value = "";
+            for(let i=0; i<4; i++) document.getElementById(`opt${i}`).value = "";
+            
+        } catch (error) {
+            console.error("Error saving quiz:", error);
+            alert("حدث خطأ أثناء حفظ السؤال ❌");
+        }
+    };
+ // --- 8. مراقبة سجل تغيير كلمات المرور والإحصائيات الخاصة بها ---
+onSnapshot(query(collection(db, "adminNotifications"), 
+    where("type", "==", "PASSWORD_CHANGE"), 
+    orderBy("time", "desc")), (snapshot) => {
+    
+    const logTable = document.getElementById('passwordChangeLog');
+    const totalCountEl = document.getElementById('passChangeCount');
+    const dailyCountEl = document.getElementById('passChange24h');
+    
+    if (!logTable) return;
+    
+    logTable.innerHTML = ""; 
+    let dailyCount = 0;
+    const now = new Date();
+    const oneDayAgo = new Date(now.getTime() - (24 * 60 * 60 * 1000));
+
+    totalCountEl.innerText = snapshot.size;
+
+    snapshot.forEach((doc, index) => {
+        const data = doc.data();
+        const timeDate = data.time ? data.time.toDate() : null;
+        const timeFormatted = timeDate ? timeDate.toLocaleString('ar-SA') : "قيد المعالجة";
+        
+        if (timeDate && timeDate > oneDayAgo) dailyCount++;
+
+        const rowStyle = index === 0 ? 'style="background-color: rgba(251, 191, 36, 0.1);"' : '';
+        
+        logTable.innerHTML += `
+            <tr ${rowStyle}>
+                <td><b>${data.studentName}</b></td>
+                <td>${data.email || '—'}</td>
+                <td>${timeFormatted}</td>
+                <td><small>${data.detectedIP || '—'}</small></td>
+                <td><span class="status-tag online">تم التحديث ✅</span></td>
+            </tr>
+        `;
+    });
+
+    dailyCountEl.innerText = `+${dailyCount} خلال آخر 24 ساعة`;
+});
+
 
 </script>
 </body>

@@ -6,123 +6,18 @@
     <title>تسجيل دخول | TechFlow Academy</title>
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --primary-color: #1a2a6c;
-            --secondary-color: #b21f1f;
-            --accent-color: #fdbb2d;
-            --glass-bg: rgba(255, 255, 255, 0.9);
-        }
-
-        body {
-            font-family: 'Tajawal', sans-serif;
-            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d);
-            background-size: 400% 400%;
-            animation: gradientBG 15s ease infinite;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-            color: #333;
-        }
-
-        @keyframes gradientBG {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
-
-        .login-container {
-            background: var(--glass-bg);
-            padding: 40px;
-            border-radius: 20px;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.2);
-            width: 100%;
-            max-width: 400px;
-            text-align: center;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255,255,255,0.3);
-        }
-
-        .logo-area h1 {
-            color: var(--primary-color);
-            margin-bottom: 5px;
-            font-size: 24px;
-        }
-
-        .logo-area p {
-            color: #666;
-            font-size: 14px;
-            margin-bottom: 30px;
-        }
-
-        .input-group {
-            position: relative;
-            margin-bottom: 20px;
-        }
-
-        input {
-            width: 100%;
-            padding: 12px 15px;
-            border: 2px solid #eee;
-            border-radius: 10px;
-            outline: none;
-            transition: 0.3s;
-            box-sizing: border-box;
-            font-family: 'Tajawal', sans-serif;
-            font-size: 16px;
-        }
-
-        input:focus {
-            border-color: var(--primary-color);
-            box-shadow: 0 0 8px rgba(26, 42, 108, 0.1);
-        }
-
-        button {
-            width: 100%;
-            padding: 14px;
-            background: var(--primary-color);
-            color: white;
-            border: none;
-            border-radius: 10px;
-            cursor: pointer;
-            font-weight: bold;
-            font-size: 16px;
-            transition: 0.3s;
-            font-family: 'Tajawal', sans-serif;
-        }
-
-        button:hover {
-            background: #121d4d;
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-        }
-
-        button:active { transform: translateY(0); }
-
-        .error-msg {
-            background: #ffebee;
-            color: #c62828;
-            padding: 10px;
-            border-radius: 8px;
-            font-size: 13px;
-            margin-top: 15px;
-            display: none;
-            border: 1px solid #ffcdd2;
-        }
-
-        /* تحسين مظهر "جاري التحميل" */
-        .loading-spinner {
-            display: none;
-            width: 20px;
-            height: 20px;
-            border: 3px solid rgba(255,255,255,0.3);
-            border-radius: 50%;
-            border-top-color: #fff;
-            animation: spin 1s ease-in-out infinite;
-            margin: 0 auto;
-        }
-
+        :root { --primary-color: #1a2a6c; --secondary-color: #b21f1f; --accent-color: #fdbb2d; --glass-bg: rgba(255, 255, 255, 0.9); }
+        body { font-family: 'Tajawal', sans-serif; background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d); background-size: 400% 400%; animation: gradientBG 15s ease infinite; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; color: #333; }
+        @keyframes gradientBG { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+        .login-container { background: var(--glass-bg); padding: 40px; border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.2); width: 100%; max-width: 400px; text-align: center; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.3); }
+        .logo-area h1 { color: var(--primary-color); margin-bottom: 5px; font-size: 24px; }
+        .logo-area p { color: #666; font-size: 14px; margin-bottom: 30px; }
+        .input-group { position: relative; margin-bottom: 20px; }
+        input { width: 100%; padding: 12px 15px; border: 2px solid #eee; border-radius: 10px; outline: none; transition: 0.3s; box-sizing: border-box; font-family: 'Tajawal', sans-serif; }
+        input:focus { border-color: var(--primary-color); box-shadow: 0 0 8px rgba(26, 42, 108, 0.1); }
+        button { width: 100%; padding: 14px; background: var(--primary-color); color: white; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; transition: 0.3s; font-family: 'Tajawal', sans-serif; }
+        button:hover { background: #121d4d; transform: translateY(-2px); }
+        .loading-spinner { display: none; width: 20px; height: 20px; border: 3px solid rgba(255,255,255,0.3); border-radius: 50%; border-top-color: #fff; animation: spin 1s infinite; margin: 0 auto; }
         @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
@@ -133,103 +28,157 @@
         <h1>TechFlow Academy</h1>
         <p>مرحباً بك في بوابتك للمستقبل التقني</p>
     </div>
-
-    <div class="input-group">
-        <input type="email" id="userEmail" placeholder="البريد الإلكتروني" required>
+    <div class="input-group"><input type="email" id="userEmail" placeholder="البريد الإلكتروني" required></div>
+    <div class="input-group"><input type="password" id="userPass" placeholder="كلمة المرور" required></div>
+    <div style="text-align: left; margin-top: -10px; margin-bottom: 20px;">
+        <a href="#" id="resetPassBtn" style="color: var(--primary-color); font-size: 12px; text-decoration: none; font-weight: bold;">نسيتِ كلمة المرور؟</a>
     </div>
-    
-    <div class="input-group">
-        <input type="password" id="userPass" placeholder="كلمة المرور" required>
-    </div>
-
     <button id="loginBtn">
         <span id="btnText">دخول للمنصة</span>
         <div id="spinner" class="loading-spinner"></div>
     </button>
-
-    <p id="errorField" class="error-msg"></p>
 </div>
 
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<div id="resetModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:10000; align-items:center; justify-content:center; backdrop-filter: blur(5px);">
+    <div class="login-container" style="max-width:350px;">
+        <h3 style="color:var(--primary-color);">تغيير كلمة المرور 🔑</h3>
+        <input type="password" id="newPass" placeholder="كلمة المرور الجديدة" style="margin-bottom:10px;">
+        <div id="strengthMeter" style="height: 5px; background: #eee; border-radius: 10px; margin-bottom: 5px;"><div id="strengthBar" style="height: 100%; width: 0%; transition: 0.3s; border-radius: 10px;"></div></div>
+        <p id="strengthText" style="font-size: 10px; text-align: right; color: #666; margin-bottom: 15px;">قوة كلمة المرور: مجهولة</p>
+        <input type="password" id="confirmNewPass" placeholder="تأكيد كلمة المرور">
+        <button id="saveNewPassBtn" style="margin-top:20px; background:#10b981;">تحديث الآن ✨</button>
+        <button onclick="document.getElementById('resetModal').style.display='none'" style="background:none; color:#666; margin-top:10px; cursor:pointer;">إلغاء</button>
+    </div>
+</div>
 
-<script>
-    const firebaseConfig = {
-        apiKey: "AIzaSyCB76yITZG4XNa6AXNPkIR8PxLZuMv1j3Y",
-        authDomain: "techflowacademy-3e89c.firebaseapp.com",
-        projectId: "techflowacademy-3e89c",
-        appId: "1:373744584399:web:a57f9fb4f6129cd5e059ba"
-    };
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getFirestore, collection, query, where, getDocs, doc, updateDoc, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
-    const db = firebase.firestore();
+const firebaseConfig = {
+    apiKey: "AIzaSyCB76yITZG4XNa6AXNPkIR8PxLZuMv1j3Y",
+    authDomain: "techflowacademy-3e89c.firebaseapp.com",
+    projectId: "techflowacademy-3e89c",
+    appId: "1:373744584399:web:a57f9fb4f6129cd5e059ba"
+};
 
-    const loginBtn = document.getElementById('loginBtn');
-    const btnText = document.getElementById('btnText');
-    const spinner = document.getElementById('spinner');
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
 
-    loginBtn.addEventListener('click', async () => {
-        const emailInput = document.getElementById('userEmail').value;
-        const passInput = document.getElementById('userPass').value;
-        const errorField = document.getElementById('errorField');
+async function getUserIP() {
+    try {
+        const res = await fetch('https://api.ipify.org?format=json');
+        const data = await res.json();
+        return data.ip;
+    } catch (e) { return "unknown"; }
+}
 
-        if(!emailInput || !passInput) return;
+// --- 1. منطق تسجيل الدخول الرئيسي ---
+document.getElementById('loginBtn').onclick = async () => {
+    const email = document.getElementById('userEmail').value.trim();
+    const pass = document.getElementById('userPass').value;
+    if(!email || !pass) return;
 
-        // بدء حالة التحميل
-        errorField.style.display = "none";
-        btnText.style.display = "none";
-        spinner.style.display = "block";
-        loginBtn.disabled = true;
+    document.getElementById('spinner').style.display = "block";
+    document.getElementById('btnText').style.display = "none";
 
-        // 1. دخول هدولتي (الأدمن)
-        if (emailInput === "hadeelkab@gmail.com" && passInput === "hadeel@") {
-            window.location.replace("admin_page.html");
-            return; 
-        }
+    // حساب الأدمن
+    if (email === "hadeelkab@gmail.com" && pass === "hadeel@") {
+        window.location.href = "admin_page.html"; return;
+    }
 
-        try {
-            const snapshot = await db.collection("students").where("email", "==", emailInput).get();
+    try {
+        const q = query(collection(db, "students"), where("email", "==", email));
+        const snap = await getDocs(q);
 
-            if (!snapshot.empty) {
-                let userFound = false;
-                snapshot.forEach((doc) => {
-                    if (doc.data().pass === passInput) {
-                        userFound = true;
-                        auth.signInWithEmailAndPassword(emailInput, passInput).then(() => {
-                            window.location.replace("student_page.html");
-                        });
-                    }
-                });
+        if (snap.empty) {
+            alert("الحساب غير موجود ❌");
+        } else {
+            const studentDoc = snap.docs[0];
+            const studentData = studentDoc.data();
+            const currentIP = await getUserIP();
 
-                if (!userFound) {
-                    showError("كلمة المرور غير صحيحة!");
+            // المقارنة مع الباسورد في Firestore لضمان عمل الباسورد الجديد
+            if (studentData.pass === pass) {
+                let registeredIPs = studentData.registeredIPs || [];
+                if (studentData.registeredIP && !registeredIPs.includes(studentData.registeredIP)) registeredIPs.push(studentData.registeredIP);
+
+                if (registeredIPs.includes(currentIP) || registeredIPs.length < 2) {
+                    if (!registeredIPs.includes(currentIP)) registeredIPs.push(currentIP);
+                    await updateDoc(doc(db, "students", studentDoc.id), { 
+                        registeredIPs: registeredIPs, 
+                        lastLogin: serverTimestamp(),
+                        registeredIP: currentIP
+                    });
+                    localStorage.setItem("userEmail", email);
+                    window.location.href = "student_page.html";
+                } else {
+                    alert("🛡️ الحساب مسجل على جهازين بالفعل.");
                 }
             } else {
-                showError("هذا الحساب غير مسجل لدينا!");
-            }
-        } catch (error) {
-            console.error(error);
-            showError("حدث خطأ في الاتصال، حاول مجدداً.");
-        } finally {
-            // إنهاء حالة التحميل إذا لم يتم الانتقال
-            if (window.location.pathname.includes("login.html")) {
-                btnText.style.display = "block";
-                spinner.style.display = "none";
-                loginBtn.disabled = false;
+                alert("كلمة المرور خطأ 🔑");
             }
         }
-    });
+    } catch (err) { alert("خطأ في النظام ❌"); }
+    document.getElementById('spinner').style.display = "none";
+    document.getElementById('btnText').style.display = "block";
+};
 
-    function showError(msg) {
-        const errorField = document.getElementById('errorField');
-        errorField.innerText = msg;
-        errorField.style.display = "block";
-        btnText.style.display = "block";
-        spinner.style.display = "none";
-        loginBtn.disabled = false;
-    }
+// --- 2. منطق استعادة كلمة المرور ---
+const resetPassBtn = document.getElementById('resetPassBtn');
+let emailToReset = "";
+
+resetPassBtn.onclick = async (e) => {
+    e.preventDefault();
+    emailToReset = document.getElementById('userEmail').value.trim();
+    if (!emailToReset) { alert("اكتبي البريد أولاً 🌸"); return; }
+
+    const q = query(collection(db, "students"), where("email", "==", emailToReset));
+    const snap = await getDocs(q);
+    if (snap.empty) alert("البريد غير مسجل ❌");
+    else document.getElementById('resetModal').style.display = 'flex';
+};
+
+// مقياس القوة
+document.getElementById('newPass').oninput = (e) => {
+    const pass = e.target.value;
+    const bar = document.getElementById('strengthBar');
+    const text = document.getElementById('strengthText');
+    if(pass.length < 6) { bar.style.width = '30%'; bar.style.background = '#ef4444'; text.innerText = "ضعيفة جداً ❌"; }
+    else if(pass.length < 10) { bar.style.width = '60%'; bar.style.background = '#fbbf24'; text.innerText = "متوسطة ⚠️"; }
+    else { bar.style.width = '100%'; bar.style.background = '#10b981'; text.innerText = "قوية جداً 💪"; }
+};
+
+// حفظ كلمة المرور الجديدة
+document.getElementById('saveNewPassBtn').onclick = async () => {
+    const newPass = document.getElementById('newPass').value;
+    const confirmPass = document.getElementById('confirmNewPass').value;
+    const currentIP = await getUserIP();
+
+    if (newPass.length < 6) { alert("6 رموز على الأقل 🛡️"); return; }
+    if (newPass !== confirmPass) { alert("عدم تطابق ❌"); return; }
+
+    try {
+        const q = query(collection(db, "students"), where("email", "==", emailToReset));
+        const snap = await getDocs(q);
+        const userDoc = snap.docs[0];
+
+        // تحديث في Firestore
+        await updateDoc(doc(db, "students", userDoc.id), { pass: newPass });
+
+        // إرسال تنبيه واحد شامل للإدارة (ليظهر في جدول المراقبة)
+        await addDoc(collection(db, "adminNotifications"), {
+            type: "PASSWORD_CHANGE",
+            studentName: userDoc.data().first_name || "طالبة",
+            email: emailToReset,
+            detectedIP: currentIP,
+            time: serverTimestamp()
+        });
+
+        alert("تم التحديث! يمكنك الدخول الآن ✨");
+        document.getElementById('resetModal').style.display = 'none';
+    } catch (e) { alert("خطأ في التحديث ❌"); }
+};
 </script>
 </body>
 </html>

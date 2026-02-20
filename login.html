@@ -72,8 +72,7 @@ async function getUserIP() {
         return data.ip;
     } catch (e) { return "unknown"; }
 }
-
-// --- 1. منطق تسجيل الدخول الرئيسي ---
+// --- 1. منطق تسجيل الدخول الرئيسي المصحح هدولتي ---
 document.getElementById('loginBtn').onclick = async () => {
     const email = document.getElementById('userEmail').value.trim();
     const pass = document.getElementById('userPass').value;
@@ -98,47 +97,50 @@ document.getElementById('loginBtn').onclick = async () => {
             const studentData = studentDoc.data();
             const currentIP = await getUserIP();
 
-            // المقارنة مع الباسورد في Firestore لضمان عمل الباسورد الجديد
             if (studentData.pass === pass) {
+                // مصفوفة الأجهزة المسجلة
                 let registeredIPs = studentData.registeredIPs || [];
-                if (studentData.registeredIP && !registeredIPs.includes(studentData.registeredIP)) registeredIPs.push(studentData.registeredIP);
+                
+                // دمج الـ IP القديم (إن وجد) في المصفوفة الجديدة لضمان التوافق
+                if (studentData.registeredIP && !registeredIPs.includes(studentData.registeredIP)) {
+                    registeredIPs.push(studentData.registeredIP);
+                }
 
-                if (registeredIPs.includes(currentIP) || registeredIPs.length < 2) {
-                    if (!registeredIPs.includes(currentIP)) registeredIPs.push(currentIP);
+                // المنطق الذكي:
+                const isKnownDevice = registeredIPs.includes(currentIP);
+                const hasSpaceForNewDevice = registeredIPs.length < 2;
+
+                if (isKnownDevice || hasSpaceForNewDevice) {
+                    // إذا كان جهازاً جديداً ومسموحاً به، نضيفه للمصفوفة
+                    if (!isKnownDevice) {
+                        registeredIPs.push(currentIP);
+                    }
+
+                    // تحديث البيانات في Firestore قبل الانتقال للصفحة التالية
                     await updateDoc(doc(db, "students", studentDoc.id), { 
                         registeredIPs: registeredIPs, 
                         lastLogin: serverTimestamp(),
-                        registeredIP: currentIP
+                        registeredIP: currentIP // للحفاظ على التوافق
                     });
+
+                    // حفظ الجلسة محلياً
                     localStorage.setItem("userEmail", email);
                     window.location.href = "student_page.html";
                 } else {
-                    alert("🛡️ الحساب مسجل على جهازين بالفعل.");
+                    // جهاز ثالث غريب
+                    alert("🛡️ عذراً هدولتي، هذا الحساب مسجل على جهازين مختلفين بالفعل. لا يمكنك الدخول من جهاز ثالث.");
                 }
             } else {
                 alert("كلمة المرور خطأ 🔑");
             }
         }
-    } catch (err) { alert("خطأ في النظام ❌"); }
+    } catch (err) { 
+        console.error(err);
+        alert("حدث خطأ في النظام ❌"); 
+    }
     document.getElementById('spinner').style.display = "none";
     document.getElementById('btnText').style.display = "block";
 };
-
-// --- 2. منطق استعادة كلمة المرور ---
-const resetPassBtn = document.getElementById('resetPassBtn');
-let emailToReset = "";
-
-resetPassBtn.onclick = async (e) => {
-    e.preventDefault();
-    emailToReset = document.getElementById('userEmail').value.trim();
-    if (!emailToReset) { alert("اكتبي البريد أولاً 🌸"); return; }
-
-    const q = query(collection(db, "students"), where("email", "==", emailToReset));
-    const snap = await getDocs(q);
-    if (snap.empty) alert("البريد غير مسجل ❌");
-    else document.getElementById('resetModal').style.display = 'flex';
-};
-
 // مقياس القوة
 document.getElementById('newPass').oninput = (e) => {
     const pass = e.target.value;

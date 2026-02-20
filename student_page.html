@@ -375,79 +375,60 @@ style="display:none; margin-top:15px; background:#10b981; color:white; border:no
 // جلب الإيميل المحفوظ فوراً بمجرد فتح الصفحة
 const savedEmail = localStorage.getItem("userEmail");
 
-// دالة التحقق من البيانات والبدء
 async function initializeStudentPortal() {
     if (!savedEmail) {
-        console.log("No saved email found, redirecting...");
         window.location.href = "login.html";
         return;
     }
 
     try {
-        // البحث في قاعدة البيانات عن الطالبة باستخدام الإيميل مباشرة
         const querySnapshot = await db.collection("students").where("email", "==", savedEmail).get();
 
         if (querySnapshot.empty) {
-            console.log("User not found in Firestore");
             window.location.href = "login.html";
             return;
         }
 
         const userDoc = querySnapshot.docs[0];
-        currentUserId = userDoc.id;
         const userData = userDoc.data();
-        const name = userData.first_name || "طالبة تيك فلو";
-        const userIP = await getUserIP();
+        const userIP = await getUserIP(); // جلب الـ IP الحالي للمقارنة
 
-        // --- نظام حماية الأجهزة (Smart Check) ---
+        // --- 🔒 نظام المقارنة الصارم (Device Comparison) ---
         if (savedEmail !== "test@gmail.com") {
             let allowedIPs = userData.registeredIPs || [];
             
-            // التوافق مع الحقل القديم
+            // التأكد من وجود جهاز مسجل واحد على الأقل
             if (userData.registeredIP && !allowedIPs.includes(userData.registeredIP)) {
                 allowedIPs.push(userData.registeredIP);
             }
 
-            if (allowedIPs.length === 0) {
-                allowedIPs.push(userIP);
-                await userDoc.ref.update({ registeredIPs: allowedIPs, registeredIP: userIP });
-            } else if (allowedIPs.length < 2 && !allowedIPs.includes(userIP)) {
-                allowedIPs.push(userIP);
-                await userDoc.ref.update({ registeredIPs: allowedIPs });
-                alert(`جهاز جديد؟ منورة يا ${name} ✨`);
-            } else if (!allowedIPs.includes(userIP)) {
-                alert("🛡️ حماية: مسموح بجهازين فقط لهذا الحساب.");
-                localStorage.clear();
-                window.location.href = "login.html";
-                return;
+            // 1. التحقق من عدد الأجهزة (المقارنة)
+            const isKnownDevice = allowedIPs.includes(userIP);
+
+            if (!isKnownDevice) {
+                // إذا كان الجهاز غير معروف، نرى هل هناك مكان شاغر؟
+                if (allowedIPs.length < 2) {
+                    allowedIPs.push(userIP);
+                    await userDoc.ref.update({ registeredIPs: allowedIPs });
+                    alert("تم تسجيل جهازكِ الجديد بنجاح ✨");
+                } else {
+                    // 🚨 هنا عملية المنع عند فشل المقارنة وتجاوز العدد
+                    alert("🛡️ أمن الحساب: عذراً، هذا الحساب مسجل على جهازين آخرين بالفعل.");
+                    localStorage.removeItem("userEmail"); // مسح الإيميل لمنع الدخول التلقائي
+                    window.location.href = "login.html";
+                    return;
+                }
             }
         }
 
-        // --- تشغيل الواجهة ---
-        updateUIUserInfo(name, savedEmail);
-       // loadLessons();
+        // --- تشغيل المنصة بعد نجاح المقارنة ---
+        updateUIUserInfo(userData.first_name || "طالبة", savedEmail);
+        loadLessons();
         listenNotifs();
         updateVisibility();
 
-        // تحديث النشاط (اختياري)
-        userDoc.ref.update({ lastSeen: firebase.firestore.FieldValue.serverTimestamp(), isOnline: true });
-
-        // مراقبة التحديثات اللحظية (تغيير الصلاحيات أو الإعلانات)
-        userDoc.ref.onSnapshot((doc) => {
-            if (doc.exists) {
-                const data = doc.data();
-                canAccessEnglish = data.canAccessEnglish || false;
-                canAccessCommSkills = data.canAccessCommSkills || false;
-                
-                updateVisibility();
-                loadLessons();
-            }
-             
-        });
-
     } catch (error) {
-        console.error("Critical Initialization Error:", error);
-        // window.location.href = "login.html"; // نفعلها فقط بعد التأكد من عمل الكود
+        console.error("Security Check Error:", error);
     }
 }
 

@@ -65,6 +65,9 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
+// متغير عالمي لحفظ الإيميل المراد إعادة تعيينه
+let emailToReset = "";
+
 async function getUserIP() {
     try {
         const res = await fetch('https://api.ipify.org?format=json');
@@ -72,7 +75,8 @@ async function getUserIP() {
         return data.ip;
     } catch (e) { return "unknown"; }
 }
-// --- 1. منطق تسجيل الدخول الرئيسي المصحح هدولتي ---
+
+// --- 1. منطق تسجيل الدخول الرئيسي هدولتي ---
 document.getElementById('loginBtn').onclick = async () => {
     const email = document.getElementById('userEmail').value.trim();
     const pass = document.getElementById('userPass').value;
@@ -81,7 +85,6 @@ document.getElementById('loginBtn').onclick = async () => {
     document.getElementById('spinner').style.display = "block";
     document.getElementById('btnText').style.display = "none";
 
-    // حساب الأدمن
     if (email === "hadeelkab@gmail.com" && pass === "hadeel@") {
         window.location.href = "admin_page.html"; return;
     }
@@ -98,49 +101,55 @@ document.getElementById('loginBtn').onclick = async () => {
             const currentIP = await getUserIP();
 
             if (studentData.pass === pass) {
-                // مصفوفة الأجهزة المسجلة
                 let registeredIPs = studentData.registeredIPs || [];
                 
-                // دمج الـ IP القديم (إن وجد) في المصفوفة الجديدة لضمان التوافق
                 if (studentData.registeredIP && !registeredIPs.includes(studentData.registeredIP)) {
                     registeredIPs.push(studentData.registeredIP);
                 }
 
-                // المنطق الذكي:
                 const isKnownDevice = registeredIPs.includes(currentIP);
                 const hasSpaceForNewDevice = registeredIPs.length < 2;
 
                 if (isKnownDevice || hasSpaceForNewDevice) {
-                    // إذا كان جهازاً جديداً ومسموحاً به، نضيفه للمصفوفة
                     if (!isKnownDevice) {
                         registeredIPs.push(currentIP);
                     }
 
-                    // تحديث البيانات في Firestore قبل الانتقال للصفحة التالية
                     await updateDoc(doc(db, "students", studentDoc.id), { 
                         registeredIPs: registeredIPs, 
                         lastLogin: serverTimestamp(),
-                        registeredIP: currentIP // للحفاظ على التوافق
+                        registeredIP: currentIP
                     });
 
-                    // حفظ الجلسة محلياً
                     localStorage.setItem("userEmail", email);
                     window.location.href = "student_page.html";
                 } else {
-                    // جهاز ثالث غريب
-                    alert("🛡️ عذراً هدولتي، هذا الحساب مسجل على جهازين مختلفين بالفعل. لا يمكنك الدخول من جهاز ثالث.");
+                    alert("🛡️ عذراً، هذا الحساب مسجل على جهازين بالفعل.");
                 }
             } else {
                 alert("كلمة المرور خطأ 🔑");
             }
         }
-    } catch (err) { 
-        console.error(err);
-        alert("حدث خطأ في النظام ❌"); 
-    }
+    } catch (err) { alert("خطأ في النظام ❌"); }
     document.getElementById('spinner').style.display = "none";
     document.getElementById('btnText').style.display = "block";
 };
+
+// --- 2. منطق فتح نافذة استعادة كلمة المرور ---
+document.getElementById('resetPassBtn').onclick = async (e) => {
+    e.preventDefault();
+    emailToReset = document.getElementById('userEmail').value.trim();
+    if (!emailToReset) { 
+        alert("هدولتي، اطلبي منها كتابة البريد أولاً 🌸"); 
+        return; 
+    }
+
+    const q = query(collection(db, "students"), where("email", "==", emailToReset));
+    const snap = await getDocs(q);
+    if (snap.empty) alert("البريد غير مسجل ❌");
+    else document.getElementById('resetModal').style.display = 'flex';
+};
+
 // مقياس القوة
 document.getElementById('newPass').oninput = (e) => {
     const pass = e.target.value;
@@ -165,10 +174,8 @@ document.getElementById('saveNewPassBtn').onclick = async () => {
         const snap = await getDocs(q);
         const userDoc = snap.docs[0];
 
-        // تحديث في Firestore
         await updateDoc(doc(db, "students", userDoc.id), { pass: newPass });
 
-        // إرسال تنبيه واحد شامل للإدارة (ليظهر في جدول المراقبة)
         await addDoc(collection(db, "adminNotifications"), {
             type: "PASSWORD_CHANGE",
             studentName: userDoc.data().first_name || "طالبة",
@@ -179,7 +186,7 @@ document.getElementById('saveNewPassBtn').onclick = async () => {
 
         alert("تم التحديث! يمكنك الدخول الآن ✨");
         document.getElementById('resetModal').style.display = 'none';
-    } catch (e) { alert("خطأ في التحديث ❌"); }
+    } catch (e) { alert("حدث خطأ أثناء التحديث ❌"); }
 };
 </script>
 </body>

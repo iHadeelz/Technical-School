@@ -360,14 +360,7 @@ style="display:none; margin-top:15px; background:#10b981; color:white; border:no
     function toggleModal() { const m = document.getElementById('profileModal'); m.style.display = (m.style.display === 'flex') ? 'none' : 'flex'; }
     function closeQuiz() { document.getElementById('quizOverlay').style.display = 'none'; document.getElementById('quizStage1').style.display = 'block'; document.getElementById('quizStage2').style.display = 'none'; }
 
-    // ✅ الدالة المفقودة التي سببت المشكلة
-    async function getUserIP() {
-        try {
-            const response = await fetch('https://api.ipify.org?format=json');
-            const data = await response.json();
-            return data.ip;
-        } catch (error) { return "unknown"; }
-    }
+   
 // --- 1. نظام مراقبة الدخول والأمان المطور (جهازين) ---
 //auth.onAuthStateChanged(async (user) => {
  // --- 1. نظام مراقبة الدخول الذكي (Smart Access Engine) ---
@@ -377,47 +370,35 @@ const savedEmail = localStorage.getItem("userEmail");
 
 async function initializeStudentPortal() {
     const savedEmail = localStorage.getItem("userEmail");
-    if (!savedEmail) { window.location.href = "login.html"; return; }
+    if (!savedEmail) { 
+        window.location.href = "login.html"; 
+        return; 
+    }
 
     try {
-        // 1. استخدام onSnapshot بدلاً من get لجعل الصلاحيات "حية"
+        // 1. مراقبة الصلاحيات والأجهزة بشكل حي عبر onSnapshot
         db.collection("students").where("email", "==", savedEmail)
             .onSnapshot(async (querySnapshot) => {
-                if (querySnapshot.empty) { window.location.href = "login.html"; return; }
+                if (querySnapshot.empty) { 
+                    window.location.href = "login.html"; 
+                    return; 
+                }
 
                 const userDoc = querySnapshot.docs[0];
                 const userData = userDoc.data();
                 currentUserId = userDoc.id;
-                const userIP = await getUserIP();
+            
 
-                // --- تحديث الصلاحيات فوراً في المتغيرات العالمية ---
+                // --- 🛡️ تحديث الصلاحيات فوراً في المتغيرات العامة ---
                 canAccessEnglish = userData.canAccessEnglish || false;
                 canAccessCommSkills = userData.canAccessCommSkills || false;
 
-                // --- 🔒 نظام الأمان والمقارنة ---
-                if (savedEmail !== "test@gmail.com") {
-                    let registeredIPs = userData.registeredIPs || [];
-                    const isKnown = registeredIPs.includes(userIP);
-
-                    if (!isKnown) {
-                        if (registeredIPs.length < 2) {
-                            registeredIPs.push(userIP);
-                            await userDoc.ref.update({ registeredIPs: registeredIPs });
-                        } else {
-                            alert("🛡️ عذراً، هذا الحساب مسجل على جهازين آخرين.");
-                            localStorage.removeItem("userEmail");
-                            window.location.href = "login.html";
-                            return;
-                        }
-                    }
-                }
-
                 // --- 🚀 تشغيل/تحديث الواجهة والدروس فوراً ---
                 updateUIUserInfo(userData.first_name || "طالبة", savedEmail);
-                updateVisibility(); // لإظهار الأقسام المخفية
-                loadLessons();     // لجلب دروس الإنجليزي والمهارات فوراً
+                updateVisibility(); // لإظهار أقسام الإنجليزي والمهارات إذا فُتحت
+                loadLessons();     // إعادة جلب الدروس بناءً على الصلاحيات الجديدة
                 listenNotifs();
-                checkWelcomeMessages(userData.first_name || "طالبة"); // لعرض رسالة الترحيب بالمادة الجديدة
+                checkWelcomeMessages(userData.first_name || "طالبة"); 
             });
 
     } catch (error) {

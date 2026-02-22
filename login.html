@@ -58,13 +58,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-async function getUserIP() {
-    try {
-        const res = await fetch('https://api.ipify.org?format=json');
-        const data = await res.json();
-        return data.ip;
-    } catch (e) { return "unknown_ip"; }
-}
+
 
 // --- زر الدخول الرئيسي المطور ---
 document.getElementById('loginBtn').onclick = async () => {
@@ -94,7 +88,7 @@ document.getElementById('loginBtn').onclick = async () => {
         } else {
             const studentDoc = snap.docs[0];
             const studentData = studentDoc.data();
-            const currentIP = await getUserIP();
+         
 
             if (String(studentData.pass).trim() === String(passInput)) {
                 
@@ -104,68 +98,18 @@ document.getElementById('loginBtn').onclick = async () => {
                     window.location.href = "student_page.html"; return;
                 }
 
-                // --- منطق بصمة الجهاز الذكية ---
-                let deviceID = localStorage.getItem("tf_device_id");
-                if (!deviceID) {
-                    deviceID = 'dev_' + Math.random().toString(36).substr(2, 9);
-                    localStorage.setItem("tf_device_id", deviceID);
-                }
-
-                let registeredDevices = studentData.registeredDevices || [];
-                let registeredIPs = studentData.registeredIPs || [];
-
-                // التحقق: هل الجهاز معروف بالبصمة أو بالـ IP؟
-                const isKnown = registeredDevices.includes(deviceID) || registeredIPs.includes(currentIP);
-
-                if (isKnown || registeredDevices.length < 2) {
-                    
-                    // تحديث المصفوفات إذا كان الجهاز جديداً
-                    if (!registeredDevices.includes(deviceID)) registeredDevices.push(deviceID);
-                    if (!registeredIPs.includes(currentIP)) registeredIPs.push(currentIP);
-
-                    await updateDoc(doc(db, "students", studentDoc.id), { 
-                        registeredDevices: registeredDevices,
-                        registeredIPs: registeredIPs,
-                        lastLogin: serverTimestamp(),
-                        isOnline: true
-                    });
-
-                    localStorage.setItem("userEmail", emailInput);
-                    window.location.href = "student_page.html";
-                } else {
-                    alert("🛡️ حماية الأجهزة: مسموح بجهازين فقط. يرجى مراجعة م. هديل.");
-                }
-            } els// --- 🔒 نظام حماية الأجهزة الموحد (Login Version) ---
-let registeredIPs = studentData.registeredIPs || [];
-
-// التحقق: هل هذا الـ IP معروف؟
-const isKnownIP = registeredIPs.includes(currentIP);
-
-if (isKnownIP || registeredIPs.length < 2) {
-    if (!isKnownIP) {
-        registeredIPs.push(currentIP);
-    }
-    
-    // تحديث السيرفر
-    await updateDoc(doc(db, "students", studentDoc.id), { 
-        registeredIPs: registeredIPs,
-        lastLogin: serverTimestamp(),
-        isOnline: true
-    });
 
     // حفظ الإيميل فقط دون مسح الكل لضمان ثبات الجلسة
     localStorage.setItem("userEmail", emailInput);
     window.location.href = "student_page.html";
-} else {
-    alert("🛡️ حماية الأجهزة: مسموح بجهازين فقط. يرجى مراجعة م. هديل.");
-}
+} 
  {
-                alert("كلمة المرور غير صحيحة 🔑");
+                alert("مرحبا بك");
             }
         }
     } catch (err) { 
         console.error(err);
-        alert("مرحبا بك"); 
+        alert("عذرا هنالك خطا ما"); 
     }
     document.getElementById('spinner').style.display = "none";
     document.getElementById('btnText').style.display = "block";
@@ -181,4 +125,5 @@ document.getElementById('testLoginBtn').onclick = (e) => {
 </script>
 </body>
 </html>
+
 
